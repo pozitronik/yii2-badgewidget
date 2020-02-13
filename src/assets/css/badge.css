@@ -1,0 +1,11 @@
+.badge a {
+	color:inherit;
+}
+
+.badge {
+	display: inline;
+}
+
+.badge.inline-block {
+	display:inline-block;
+}
