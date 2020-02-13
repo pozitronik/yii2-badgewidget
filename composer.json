@@ -19,5 +19,11 @@
         "psr-4": {
             "pozitronik\\widgets\\": "src"
         }
-    }
+    },
+    "repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/pozitronik/yii2-cachedwidget"
+		}
+	]
 }
