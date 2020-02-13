@@ -13,7 +13,7 @@ Add
 ```
 {
 	"type": "vcs",
-	"url": "https://github.com/pozitronik/yii2-badgedwidget"
+	"url": "https://github.com/pozitronik/yii2-badgewidget"
 } 
 ```
 
