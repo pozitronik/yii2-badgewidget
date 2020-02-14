@@ -1,5 +1,5 @@
 .badge a {
-	color:inherit;
+	color: inherit;
 }
 
 .badge {
@@ -7,5 +7,5 @@
 }
 
 .badge.inline-block {
-	display:inline-block;
+	display: inline-block;
 }
