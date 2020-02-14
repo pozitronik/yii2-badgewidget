@@ -6,7 +6,6 @@ namespace pozitronik\widgets;
 use pozitronik\helpers\Utils;
 use pozitronik\helpers\ArrayHelper;
 use pozitronik\helpers\ReflectionHelper;
-use pozitronik\widgets\CachedWidget;
 use Throwable;
 use yii\base\DynamicModel;
 use yii\base\Model;
