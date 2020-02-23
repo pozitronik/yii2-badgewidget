@@ -8,7 +8,7 @@
 		"widget",
 		"badges"
 	],
-	"license": "GPL-3.0",
+	"license": "GPL-3.0-or-later",
 	"authors": [
 		{
 			"name": "Pavel Dubrovsky",
@@ -26,6 +26,14 @@
 		}
 	},
 	"repositories": [
+		{
+			"type": "composer",
+			"url": "https://asset-packagist.org"
+		},
+		{
+			"type": "vcs",
+			"url": "https://github.com/pozitronik/yii2-helpers"
+		},
 		{
 			"type": "vcs",
 			"url": "https://github.com/pozitronik/yii2-cachedwidget"
