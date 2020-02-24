@@ -17,8 +17,8 @@
 	],
 	"require": {
 		"yiisoft/yii2": "~2.0.0",
-		"pozitronik/yii2-helpers": "dev-master",
-		"pozitronik/yii2-cachedwidget": "dev-master"
+		"pozitronik/yii2-helpers": ">=1.0",
+		"pozitronik/yii2-cachedwidget": ">=1.0"
 	},
 	"autoload": {
 		"psr-4": {
