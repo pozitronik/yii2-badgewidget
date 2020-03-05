@@ -20,6 +20,9 @@
 		"pozitronik/yii2-helpers": "*",
 		"pozitronik/yii2-cachedwidget": "*"
 	},
+	"require-dev": {
+		"yiisoft/yii2": "*"
+	},
 	"autoload": {
 		"psr-4": {
 			"pozitronik\\widgets\\": "src"
