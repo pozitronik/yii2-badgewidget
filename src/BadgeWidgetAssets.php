@@ -4,15 +4,11 @@ declare(strict_types = 1);
 namespace pozitronik\widgets;
 
 use yii\web\AssetBundle;
-use app\assets\AppAsset;
 
 /**
  * Class BadgeWidgetAssets
  */
 class BadgeWidgetAssets extends AssetBundle {
-	public $depends = [
-		AppAsset::class
-	];
 
 	public $publishOptions = [
 		'forceCopy' => YII_ENV_DEV
