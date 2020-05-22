@@ -17,7 +17,7 @@ class BadgeWidgetAssets extends AssetBundle {
 	/**
 	 * @inheritdoc
 	 */
-	public function init() {
+	public function init():void {
 		$this->sourcePath = __DIR__.'/assets';
 		$this->css = ['css/badge.css'];
 		parent::init();

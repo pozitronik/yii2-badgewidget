@@ -63,7 +63,7 @@ class BadgeWidget extends CachedWidget {
 	/**
 	 * Функция инициализации и нормализации свойств виджета
 	 */
-	public function init() {
+	public function init():void {
 		parent::init();
 		BadgeWidgetAssets::register($this->getView());
 	}
