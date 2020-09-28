@@ -21,11 +21,13 @@ use yii\helpers\Html;
  * @property string $linkAttribute
  * @property array|false $linkScheme
  * @property string $itemsSeparator
+ * @property string $moreBadgeTooltipSeparator
  * @property integer|false $unbadgedCount
  * @property array|callable $optionsMap
  * @property null|string $optionsMapAttribute
  * @property array $badgeOptions
  * @property array $moreBadgeOptions
+ * @property bool $moreBadgeUseTooltip
  * @property string|callable $prefix
  * @property string|callable $badgePrefix
  * @property string|callable $badgePostfix
@@ -52,6 +54,8 @@ class BadgeWidget extends CachedWidget {
 	public $optionsMapAttribute; //Имя аттрибута, используемого для подбора значения в $optionsMap, если null, то используется primaryKey (или id, если модель не имеет первичного ключа)
 	public $badgeOptions = ['class' => 'badge'];//дефолтная опция для бейджа
 	public $moreBadgeOptions = ['class' => 'badge pull-right'];//Массив HTML-опций для бейджа "ещё".
+	public $moreBadgeUseTooltip = true;//включает вывод скрытых данных во всплыващей подсказке бейджа "ещё"
+	public $moreBadgeTooltipSeparator = ', ';//Разделитель текста всплывающих подсказок за значком "ещё"
 	public $prefix = '';//строчка, добавляемая перед всеми бейджами, может задаваться замыканием
 	public $badgePrefix = '';//строчка, добавляемая перед содержимым каждого, может задаваться замыканием, принимает параметром текущую модель
 	public $badgePostfix = '';//строчка, добавляемая после содержимого каждого бейджа, может задаваться замыканием, принимает параметром текущую модель
@@ -75,6 +79,7 @@ class BadgeWidget extends CachedWidget {
 	 */
 	public function run():string {
 		$result = [];
+		$rawResultContents = [];//необработанные значения атрибутов, нужны для вывода подсказки в тултип
 		$moreBadge = '';
 
 //		if (null === $this->models) throw new InvalidConfigException('Model property not properly configured');
@@ -139,7 +144,7 @@ class BadgeWidget extends CachedWidget {
 
 			$badgeContent = (ReflectionHelper::is_closure($this->badgePrefix))?call_user_func($this->badgePrefix, $model).$badgeContent:$this->badgePrefix.$badgeContent;
 			$badgeContent = (ReflectionHelper::is_closure($this->badgePostfix))?$badgeContent.call_user_func($this->badgePostfix, $model):$badgeContent.$this->badgePostfix;
-
+			$rawResultContents[] = $badgeContent;
 			if ($this->useBadges) {
 				$result[] = Html::tag("span", $badgeContent, array_merge(['class' => 'badge'], $badgeHtmlOptions));
 			} else {
@@ -148,8 +153,17 @@ class BadgeWidget extends CachedWidget {
 
 		}
 		if ($this->unbadgedCount && count($result) > $this->unbadgedCount) {
-			$moreBadge = Html::tag("span", "...ещё ".(count($result) - $this->unbadgedCount), $this->moreBadgeOptions);
+			$moreCount = (count($result) - $this->unbadgedCount);
 			array_splice($result, $this->unbadgedCount, count($result));
+			if ($this->moreBadgeUseTooltip) {
+				$this->moreBadgeOptions = ArrayHelper::mergeImplode(' ', $this->moreBadgeOptions, [
+					'class' => 'add-tooltip badge',
+					'data-toggle' => 'tooltip',
+					'data-original-title' => implode($this->moreBadgeTooltipSeparator, array_slice($rawResultContents, $this->unbadgedCount, $moreCount)),
+					'data-placement' => $this->tooltipPlacement
+				]);
+			}
+			$moreBadge = Html::tag('span', "...ещё {$moreCount}", $this->moreBadgeOptions);
 		}
 		if ([] === $result && false !== $this->emptyResult) $result = [$this->emptyResult];
 
