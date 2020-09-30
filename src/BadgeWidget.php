@@ -61,7 +61,7 @@ class BadgeWidget extends CachedWidget {
 	public $badgePostfix = '';//строчка, добавляемая после содержимого каждого бейджа, может задаваться замыканием, принимает параметром текущую модель
 	public $emptyResult = false;//значение, возвращаемое, если из обрабатываемых данных не удалось получить результат (обрабатываем пустые массивы, модель не содержит данных, etc)
 	public $iconify = false;//Свернуть содержимое бейджа в иконку
-	public $tooltip;//если не null, то на бейдж навешивается тултип. Можно задавать замыканием user_func($model):string
+	public $tooltip;//если не null, то на бейдж навешивается тултип. Можно задавать замыканием user_func($model):string, в этом случае для каждого бейджа вычисляется свой тултип
 	public $tooltipPlacement = self::TP_TOP;
 
 	/**
@@ -114,16 +114,6 @@ class BadgeWidget extends CachedWidget {
 			}
 
 			$badgeHtmlOptions = !is_array($badgeHtmlOptions)?$this->badgeOptions:array_merge($this->badgeOptions, $badgeHtmlOptions);
-			/*add bootstrap tooltips, if necessary*/
-			if (null !== $this->tooltip) {
-				if (ReflectionHelper::is_closure($this->tooltip)) $this->tooltip = call_user_func($this->tooltip, $model);
-				$badgeHtmlOptions = ArrayHelper::mergeImplode(' ', $badgeHtmlOptions, [
-					'class' => 'add-tooltip badge',
-					'data-toggle' => 'tooltip',
-					'data-original-title' => $this->tooltip,
-					'data-placement' => $this->tooltipPlacement
-				]);
-			}
 
 			$badgeContent = $this->iconify?Utils::ShortifyString(ArrayHelper::getValue($model, $this->attribute)):ArrayHelper::getValue($model, $this->attribute);
 
@@ -146,7 +136,17 @@ class BadgeWidget extends CachedWidget {
 			$badgeContent = (ReflectionHelper::is_closure($this->badgePostfix))?$badgeContent.call_user_func($this->badgePostfix, $model):$badgeContent.$this->badgePostfix;
 			$rawResultContents[] = $badgeContent;
 			if ($this->useBadges) {
-				$result[] = Html::tag("span", $badgeContent, array_merge(['class' => 'badge'], $badgeHtmlOptions));
+				$currentBadgeHtmlOptions = $badgeHtmlOptions;
+				/*add bootstrap tooltips, if necessary*/
+				if (null !== $this->tooltip) {
+					$currentBadgeHtmlOptions = ArrayHelper::mergeImplode(' ', $currentBadgeHtmlOptions, [
+						'class' => 'add-tooltip badge',
+						'data-toggle' => 'tooltip',
+						'data-original-title' => (ReflectionHelper::is_closure($this->tooltip))?call_user_func($this->tooltip, $model):$tooltip = $this->tooltip,
+						'data-placement' => $this->tooltipPlacement
+					]);
+				}
+				$result[] = Html::tag("span", $badgeContent, array_merge(['class' => 'badge'], $currentBadgeHtmlOptions));
 			} else {
 				$result[] = $badgeContent;
 			}
