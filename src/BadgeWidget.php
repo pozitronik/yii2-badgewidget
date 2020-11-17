@@ -163,7 +163,7 @@ class BadgeWidget extends CachedWidget {
 					'data-placement' => $this->tooltipPlacement
 				]);
 			}
-			$moreBadge = Html::tag('span', "...ещё {$moreCount}", $this->moreBadgeOptions);
+			$moreBadge = $this->useBadges?Html::tag('span', "...ещё {$moreCount}", $this->moreBadgeOptions):"{$this->itemsSeparator}...ещё {$moreCount}";
 		}
 		if ([] === $result && false !== $this->emptyResult) $result = [$this->emptyResult];
 
