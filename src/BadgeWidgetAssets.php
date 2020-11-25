@@ -10,9 +10,9 @@ use yii\web\AssetBundle;
  */
 class BadgeWidgetAssets extends AssetBundle {
 
-	public $publishOptions = [
-		'forceCopy' => YII_ENV_DEV
-	];
+//	public $publishOptions = [
+//		'forceCopy' => YII_ENV_DEV
+//	];
 
 	/**
 	 * @inheritdoc
