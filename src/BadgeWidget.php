@@ -128,7 +128,7 @@ class BadgeWidget extends CachedWidget {
 					} else if ($model->hasProperty($value) && false !== $attributeValue = ArrayHelper::getValue($model, $value, false)) $value = $attributeValue;
 
 				});
-				if ([] !== $arrayedParameters) array_merge($currentLinkScheme, $arrayedParameters);//если в схеме были переданы значения массивом, включаем их разбор в схему
+				if ([] !== $arrayedParameters) $currentLinkScheme = array_merge(...$arrayedParameters);//если в схеме были переданы значения массивом, включаем их разбор в схему
 				$badgeContent = Html::a($badgeContent, $currentLinkScheme);
 			}
 
