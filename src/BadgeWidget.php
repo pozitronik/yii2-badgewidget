@@ -42,27 +42,27 @@ class BadgeWidget extends CachedWidget {
 	public const TP_BOTTOM = 'bottom';
 	public const TP_LEFT = 'left';
 
-	public $models;//Обрабатываемое значение/массив значений. Допускаются любые комбинации
-	public $attribute;//Атрибут модели, отображаемый в текст
-	public $unbadgedCount = false;//Количество объектов, не сворачиваемых в бейдж
-	public $useBadges = true;//использовать бейджи для основного списка.
+	public null|string|array|object $models = null;//Обрабатываемое значение/массив значений. Допускаются любые комбинации
+	public string $attribute;//Атрибут модели, отображаемый в текст
+	public bool|int $unbadgedCount = false;//Количество объектов, не сворачиваемых в бейдж
+	public bool $useBadges = true;//использовать бейджи для основного списка.
 
-	public $linkAttribute = 'id';//Атрибут, подставляемый в ссылку по схеме в $linkScheme. Строка, или массив строк (в этом случае подстановка идёт по порядку).
-	public $linkScheme = false;//Url-схема, например ['/groups/groups/profile', 'id' => 'id'] (Значение id будет взято из аттрибута id текущей модели), если false - то не используем ссылки
-	public $itemsSeparator = ', ';//Разделитель объектов
-	public $optionsMap = []; //Массив HTML-опций для каждого бейджа ([optionsMapAttributeValue => options])". Если установлен, мержится с $badgeOptions
-	public $optionsMapAttribute; //Имя аттрибута, используемого для подбора значения в $optionsMap, если null, то используется primaryKey (или id, если модель не имеет первичного ключа)
-	public $badgeOptions = ['class' => 'badge'];//дефолтная опция для бейджа
-	public $moreBadgeOptions = ['class' => 'badge pull-right'];//Массив HTML-опций для бейджа "ещё".
-	public $moreBadgeUseTooltip = true;//включает вывод скрытых данных во всплыващей подсказке бейджа "ещё"
-	public $moreBadgeTooltipSeparator = ', ';//Разделитель текста всплывающих подсказок за значком "ещё"
-	public $prefix = '';//строчка, добавляемая перед всеми бейджами, может задаваться замыканием
-	public $badgePrefix = '';//строчка, добавляемая перед содержимым каждого, может задаваться замыканием, принимает параметром текущую модель
-	public $badgePostfix = '';//строчка, добавляемая после содержимого каждого бейджа, может задаваться замыканием, принимает параметром текущую модель
-	public $emptyResult = false;//значение, возвращаемое, если из обрабатываемых данных не удалось получить результат (обрабатываем пустые массивы, модель не содержит данных, etc)
-	public $iconify = false;//Свернуть содержимое бейджа в иконку
-	public $tooltip;//если не null, то на бейдж навешивается тултип. Можно задавать замыканием user_func($model):string, в этом случае для каждого бейджа вычисляется свой тултип
-	public $tooltipPlacement = self::TP_TOP;
+	public string $linkAttribute = 'id';//Атрибут, подставляемый в ссылку по схеме в $linkScheme. Строка, или массив строк (в этом случае подстановка идёт по порядку).
+	public bool|array $linkScheme = false;//Url-схема, например ['/groups/groups/profile', 'id' => 'id'] (Значение id будет взято из аттрибута id текущей модели), если false - то не используем ссылки
+	public string $itemsSeparator = ', ';//Разделитель объектов
+	public array $optionsMap = []; //Массив HTML-опций для каждого бейджа ([optionsMapAttributeValue => options])". Если установлен, мержится с $badgeOptions
+	public null|string $optionsMapAttribute = null; //Имя аттрибута, используемого для подбора значения в $optionsMap, если null, то используется primaryKey (или id, если модель не имеет первичного ключа)
+	public array $badgeOptions = ['class' => 'badge'];//дефолтная опция для бейджа
+	public array $moreBadgeOptions = ['class' => 'badge pull-right'];//Массив HTML-опций для бейджа "ещё".
+	public bool $moreBadgeUseTooltip = true;//включает вывод скрытых данных во всплыващей подсказке бейджа "ещё"
+	public string $moreBadgeTooltipSeparator = ', ';//Разделитель текста всплывающих подсказок за значком "ещё"
+	public string $prefix = '';//строчка, добавляемая перед всеми бейджами, может задаваться замыканием
+	public string $badgePrefix = '';//строчка, добавляемая перед содержимым каждого, может задаваться замыканием, принимает параметром текущую модель
+	public string $badgePostfix = '';//строчка, добавляемая после содержимого каждого бейджа, может задаваться замыканием, принимает параметром текущую модель
+	public bool $emptyResult = false;//значение, возвращаемое, если из обрабатываемых данных не удалось получить результат (обрабатываем пустые массивы, модель не содержит данных, etc)
+	public bool $iconify = false;//Свернуть содержимое бейджа в иконку
+	public null|string|object $tooltip = null;//если не null, то на бейдж навешивается тултип. Можно задавать замыканием user_func($model):string, в этом случае для каждого бейджа вычисляется свой тултип
+	public string $tooltipPlacement = self::TP_TOP;
 
 	/**
 	 * Функция инициализации и нормализации свойств виджета
