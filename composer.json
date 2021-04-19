@@ -17,15 +17,22 @@
 	],
 	"minimum-stability": "dev",
 	"require": {
-		"pozitronik/yii2-helpers": "*",
-		"pozitronik/yii2-cachedwidget": "*"
+		"pozitronik/yii2-helpers": "dev-master",
+		"pozitronik/yii2-cachedwidget": "dev-master"
 	},
 	"require-dev": {
+		"yidas/yii2-composer-bower-skip": "dev-master",
 		"yiisoft/yii2": "dev-master"
 	},
 	"autoload": {
 		"psr-4": {
 			"pozitronik\\widgets\\": "src"
+		}
+	},
+	"config": {
+		"process-timeout": 1800,
+		"fxp-asset": {
+			"enabled": false
 		}
 	}
 }
