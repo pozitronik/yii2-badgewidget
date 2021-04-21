@@ -9,60 +9,63 @@ use pozitronik\helpers\ReflectionHelper;
 use Throwable;
 use yii\base\DynamicModel;
 use yii\base\Model;
-use yii\db\ActiveRecord;
 use yii\helpers\Html;
 
 /**
  * Class BadgeWidget
- * @property string|array|object|callable $models
- * @property string $attribute
- * @property boolean $useBadges
- * @property string|false $allBadgeClass
- * @property string $linkAttribute
- * @property array|false $linkScheme
- * @property string $itemsSeparator
- * @property string $moreBadgeTooltipSeparator
- * @property integer|false $unbadgedCount
- * @property array|callable $optionsMap
- * @property null|string $optionsMapAttribute
- * @property array $badgeOptions
- * @property array $moreBadgeOptions
- * @property bool $moreBadgeUseTooltip
- * @property string|callable $prefix
- * @property string|callable $badgePrefix
- * @property string|callable $badgePostfix
- * @property string|null|false $emptyResult
- * @property bool $iconify
- * @property null|string|callable $tooltip
- * @property string $tooltipPlacement
+ * @property-write string|array|object|callable $items Данные для обработки (строка, массив, модель, замыкание). Преобразуются в массив при обработке.
+ * @property-write string $subItem Отображаемый ключ (строка => null, массив => key, модель => атрибут/свойство/переменная, замыкание => параметр). Виджет пытается просчитать его автоматически.
+ * @property string $itemsSeparator Строка-разделитель между элементами
+ * @property string|null $emptyText Текст иконки, подставляемой при отсутствии обрабатываемых данных
+ * @property-write bool $iconize Содержимое бейджа сокращается до псевдоиконки.
+ *  *
+ * @property-write string|callable $innerPrefix Строка, добавляемая перед текстом внутри значка. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
+ * @property-write string|callable $innerPostfix Строка, добавляемая после текста внутри значка. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
+ * @property-write string|callable $outerPrefix Строка, добавляемая перед текстом снаружи значка. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
+ * @property-write string|callable $outerPostfix Строка, добавляемая перед текстом внутри значка. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
+ * @property-write string $allPrefix Строка, добавляемая перед всем массивом значков.
+ *
+ * @property null|string $mapAttribute Атрибут, значение которого будет использоваться как ключевое при сопоставлении элементов с массивами параметров. Если не задан, виджет попытается вычислить его самостоятельно, взяв ключевой атрибут для ActiveRecord или ключ для элемента массива.
+ *
+ * @property-write BadgeOptions|array|false $badgeOptions Настройки значков. false - не использовать значки.
+ * @property-write UrlOptions|array|false $urlOptions Настройки сопоставления элементов со ссылками. false - элементы не превращаются в ссылки.
+ * @property-write TooltipOptions|array|false $tooltipOptions Настройки для всплывающей подсказки. false - всплывающая подсказка не используется.
+ *
+ *
  */
 class BadgeWidget extends CachedWidget {
-	public const TP_TOP = 'top';
-	public const TP_RIGHT = 'right';
-	public const TP_BOTTOM = 'bottom';
-	public const TP_LEFT = 'left';
+	public $subItem;
+	public $itemsSeparator = ', ';
+	public $iconize = false;
+	public $innerPrefix = '';
+	public $innerPostfix = '';
+	public $outerPrefix = '';
+	public $outerPostfix = '';
+	public $allPrefix = '';
+	public $emptyResult;
 
-	public $models;//Обрабатываемое значение/массив значений. Допускаются любые комбинации
-	public $attribute;//Атрибут модели, отображаемый в текст
-	public $unbadgedCount = false;//Количество объектов, не сворачиваемых в бейдж
-	public $useBadges = true;//использовать бейджи для основного списка.
 
-	public $linkAttribute = 'id';//Атрибут, подставляемый в ссылку по схеме в $linkScheme. Строка, или массив строк (в этом случае подстановка идёт по порядку).
-	public $linkScheme = false;//Url-схема, например ['/groups/groups/profile', 'id' => 'id'] (Значение id будет взято из аттрибута id текущей модели), если false - то не используем ссылки
-	public $itemsSeparator = ', ';//Разделитель объектов
-	public $optionsMap = []; //Массив HTML-опций для каждого бейджа ([optionsMapAttributeValue => options])". Если установлен, мержится с $badgeOptions
-	public $optionsMapAttribute; //Имя аттрибута, используемого для подбора значения в $optionsMap, если null, то используется primaryKey (или id, если модель не имеет первичного ключа)
-	public $badgeOptions = ['class' => 'badge'];//дефолтная опция для бейджа
-	public $moreBadgeOptions = ['class' => 'badge pull-right'];//Массив HTML-опций для бейджа "ещё".
-	public $moreBadgeUseTooltip = true;//включает вывод скрытых данных во всплыващей подсказке бейджа "ещё"
-	public $moreBadgeTooltipSeparator = ', ';//Разделитель текста всплывающих подсказок за значком "ещё"
-	public $prefix = '';//строчка, добавляемая перед всеми бейджами, может задаваться замыканием
-	public $badgePrefix = '';//строчка, добавляемая перед содержимым каждого, может задаваться замыканием, принимает параметром текущую модель
-	public $badgePostfix = '';//строчка, добавляемая после содержимого каждого бейджа, может задаваться замыканием, принимает параметром текущую модель
-	public $emptyResult = false;//значение, возвращаемое, если из обрабатываемых данных не удалось получить результат (обрабатываем пустые массивы, модель не содержит данных, etc)
-	public $iconify = false;//Свернуть содержимое бейджа в иконку
-	public $tooltip;//если не null, то на бейдж навешивается тултип. Можно задавать замыканием user_func($model):string, в этом случае для каждого бейджа вычисляется свой тултип
-	public $tooltipPlacement = self::TP_TOP;
+	/**
+	 * @var array
+	 */
+	private $_items = [];
+	/**
+	 * @var BadgeOptions|false
+	 */
+	private $_badgeOptions;
+
+	/**
+	 * @var UrlOptions|false
+	 */
+	private $_urlOptions;
+
+	/**
+	 * @var TooltipOptions|false
+	 */
+	private $_tooltipOptions;
+
+	/* Необработанные значения атрибутов, нужны для вывода подсказки в тултип */
+	private $_rawResultContents = [];
 
 	/**
 	 * Функция инициализации и нормализации свойств виджета
@@ -73,103 +76,177 @@ class BadgeWidget extends CachedWidget {
 	}
 
 	/**
+	 * @return array
+	 */
+	public function getItems():array {
+		return $this->_items;
+	}
+
+	/**
+	 * @param array|callable|object|string $items
+	 */
+	public function setItems($items):void {
+		$this->_items = $items;
+		if (ReflectionHelper::is_closure($this->_items)) $this->_items = call_user_func($this->_items);
+		if (!is_array($this->_items)) $this->_items = [$this->_items];
+	}
+
+	/**
+	 * @return array|false|BadgeOptions
+	 */
+	public function getBadgeOptions() {
+		return $this->_badgeOptions;
+	}
+
+	/**
+	 * @param array|false|BadgeOptions $badgeOptions
+	 */
+	public function setBadgeOptions($badgeOptions):void {
+		if (false === $badgeOptions) {
+			$this->_badgeOptions = false;
+		} elseif (is_array($badgeOptions)) {
+			$this->_badgeOptions = new BadgeOptions($badgeOptions);
+		} elseif (is_object($badgeOptions)) {
+			$this->_badgeOptions = $badgeOptions;
+		}
+	}
+
+	/**
+	 * @return false|UrlOptions
+	 */
+	public function getUrlOptions() {
+		return $this->_urlOptions;
+	}
+
+	/**
+	 * @param array|false|UrlOptions $urlOptions
+	 */
+	public function setUrlOptions($urlOptions):void {
+		if (false === $urlOptions) {
+			$this->_urlOptions = false;
+		} elseif (is_array($urlOptions)) {
+			$this->_urlOptions = new UrlOptions($urlOptions);
+		} elseif (is_object($urlOptions)) {
+			$this->_urlOptions = $urlOptions;
+		}
+		$this->_urlOptions = $urlOptions;
+	}
+
+	/**
+	 * @return array|false|TooltipOptions
+	 */
+	public function getTooltipOptions() {
+		return $this->_tooltipOptions;
+	}
+
+	/**
+	 * @param array|false|TooltipOptions $tooltipOptions
+	 */
+	public function setTooltipOptions($tooltipOptions):void {
+		if (false === $tooltipOptions) {
+			$this->_tooltipOptions = false;
+		} elseif (is_array($tooltipOptions)) {
+			$this->_tooltipOptions = new TooltipOptions($tooltipOptions);
+		} elseif (is_object($tooltipOptions)) {
+			$this->_tooltipOptions = $tooltipOptions;
+		}
+		$this->_tooltipOptions = $tooltipOptions;
+	}
+
+	/**
+	 * Преобразует каждый перечисляемый объект в модель для внутреннего использования
+	 * @param int $index
+	 * @param $item
+	 * @param string $subItemName
+	 * @return Model
+	 */
+	private static function PrepareItem(int $index, $item, $subItemName = 'value'):Model {
+		if (!is_object($item)) {
+			if (is_array($item)) {
+				return new DynamicModel($item);
+			}
+			return new DynamicModel([
+				'id' => $index,
+				$subItemName => $item
+			]);
+		}
+		return $item;
+	}
+
+	/**
+	 * @param Model $item
+	 * @return string
+	 * @throws Throwable
+	 */
+	private function prepareValue(Model $item):string {
+		$itemValue = ArrayHelper::getValue($item, $this->subItem);/*Текстовое значение значка*/
+		$this->_rawResultContents[] = $itemValue;
+		$prefix = (is_callable($this->innerPrefix))?call_user_func($this->innerPrefix, $item):$this->innerPrefix;
+		$postfix = (is_callable($this->innerPostfix))?call_user_func($this->innerPostfix, $item):$this->innerPostfix;
+
+		return $prefix.$itemValue.$postfix;
+	}
+
+	/**
+	 * @param Model $item
+	 * @return string
+	 */
+	public function prepareMapAttribute(Model $item):string {
+		if (null === $this->mapAttribute) {
+			if ($item->hasProperty('id')) {/*assume generated DynamicModel*/
+				return 'id';
+			}
+			if ($item->hasProperty('primaryKey')) {/*assume ActiveRecord*/
+				return 'primaryKey';
+			}
+		}
+		return $this->mapAttribute;
+	}
+
+	/**
 	 * Функция возврата результата рендеринга виджета
 	 * @return string
 	 * @throws Throwable
 	 */
 	public function run():string {
 		$result = [];
-		$rawResultContents = [];//необработанные значения атрибутов, нужны для вывода подсказки в тултип
 		$moreBadge = '';
 
-//		if (null === $this->models) throw new InvalidConfigException('Model property not properly configured');
-		if (ReflectionHelper::is_closure($this->models)) $this->models = call_user_func($this->models);
+		foreach ($this->items as $index => $item) {
+			if (null === $item) continue;
 
-		if (!is_array($this->models)) $this->models = [$this->models];
+			$item = self::PrepareItem($index, $item, $this->subItem);
+			$itemValue = $this->prepareValue($item);
 
-		/** @var Model|ActiveRecord $model */
+			$mapAttribute = $this->prepareMapAttribute($item);
 
-		foreach ($this->models as $index => $model) {
-			if (null === $model) continue;
+			if ($this->iconize) $itemValue = Utils::ShortifyString($itemValue);
 
-			if (!is_object($model)) {
-				if (is_array($model)) {
-					$model = new DynamicModel($model);
-				} else {
-					$model = new DynamicModel([
-						'id' => $index,
-						'value' => $model
-					]);
-					$this->attribute = 'value';
+			if ($this->urlOptions) {/*Превращает элемент в ссылку*/
+				$itemValue = $this->urlOptions->prepareUrl($item, $itemValue);
+			}
+
+			if ($this->badgeOptions) {
+				$itemOptions = $this->badgeOptions->prepareOptions($item, $mapAttribute);
+
+				if ($this->tooltipOptions) {/*Добавляет к элементу всплывающую подсказку*/
+					$itemOptions = $this->tooltipOptions->prepareTooltip($item, $itemOptions, $this->_rawResultContents);
 				}
-			}
-
-			if (ReflectionHelper::is_closure($this->optionsMap)) $this->optionsMap = call_user_func($this->optionsMap, $model);
-
-			if (null === $this->optionsMapAttribute && $model->hasProperty('primaryKey')) {
-				$badgeHtmlOptions = (null === $model->primaryKey)?$this->badgeOptions:ArrayHelper::getValue($this->optionsMap, $model->primaryKey, $this->badgeOptions);
 			} else {
-				if (null === $this->optionsMapAttribute && $model->hasProperty('id')) $this->optionsMapAttribute = 'id';
-				$badgeHtmlOptions = $model->hasProperty($this->optionsMapAttribute)?ArrayHelper::getValue($this->optionsMap, $model->{$this->optionsMapAttribute}, $this->badgeOptions):$this->badgeOptions;
+				$itemOptions = false;
 			}
 
-			$badgeHtmlOptions = !is_array($badgeHtmlOptions)?$this->badgeOptions:array_merge($this->badgeOptions, $badgeHtmlOptions);
-
-			$badgeContent = $this->iconify?Utils::ShortifyString(ArrayHelper::getValue($model, $this->attribute)):ArrayHelper::getValue($model, $this->attribute);
-
-			if ($this->linkScheme) {
-				$currentLinkScheme = $this->linkScheme;
-				$arrayedParameters = [];
-				array_walk($currentLinkScheme, static function(&$value, $key) use ($model, &$arrayedParameters) {//подстановка в схему значений из модели
-					if (is_array($value)) {//value passed as SomeParameter => [a,b,c,...] => convert to SomeParameter[1] => a, SomeParameter[2] => b, SomeParameter[3] => c
-						foreach ($value as $index => $item) {
-							$arrayedParameters["{$key}[{$index}]"] = $item;
-						}
-					} else if ($model->hasProperty($value) && false !== $attributeValue = ArrayHelper::getValue($model, $value, false)) $value = $attributeValue;
-
-				});
-				if ([] !== $arrayedParameters) $currentLinkScheme = array_merge(...$arrayedParameters);//если в схеме были переданы значения массивом, включаем их разбор в схему
-				$badgeContent = Html::a($badgeContent, $currentLinkScheme);
-			}
-
-			$badgeContent = (ReflectionHelper::is_closure($this->badgePrefix))?call_user_func($this->badgePrefix, $model).$badgeContent:$this->badgePrefix.$badgeContent;
-			$badgeContent = (ReflectionHelper::is_closure($this->badgePostfix))?$badgeContent.call_user_func($this->badgePostfix, $model):$badgeContent.$this->badgePostfix;
-			$rawResultContents[] = $badgeContent;
-			if ($this->useBadges) {
-				$currentBadgeHtmlOptions = $badgeHtmlOptions;
-				/*add bootstrap tooltips, if necessary*/
-				if (null !== $this->tooltip) {
-					$currentBadgeHtmlOptions = ArrayHelper::mergeImplode(' ', $currentBadgeHtmlOptions, [
-						'class' => 'add-tooltip badge',
-						'data-toggle' => 'tooltip',
-						'data-original-title' => (ReflectionHelper::is_closure($this->tooltip))?call_user_func($this->tooltip, $model):$tooltip = $this->tooltip,
-						'data-placement' => $this->tooltipPlacement
-					]);
-				}
-				$result[] = Html::tag("span", $badgeContent, array_merge(['class' => 'badge'], $currentBadgeHtmlOptions));
+			if ($itemOptions) {
+				$result[$item->{$mapAttribute}] = Html::tag("span", $itemValue, array_merge(['class' => 'badge'], $itemOptions));
 			} else {
-				$result[] = $badgeContent;
+				$result[$item->{$mapAttribute}] = $itemValue;
 			}
-
 		}
-		if ($this->unbadgedCount && count($result) > $this->unbadgedCount) {
-			$moreCount = (count($result) - $this->unbadgedCount);
-			array_splice($result, $this->unbadgedCount, count($result));
-			if ($this->moreBadgeUseTooltip) {
-				$this->moreBadgeOptions = ArrayHelper::mergeImplode(' ', $this->moreBadgeOptions, [
-					'class' => 'add-tooltip badge',
-					'data-toggle' => 'tooltip',
-					'data-original-title' => implode($this->moreBadgeTooltipSeparator, array_slice($rawResultContents, $this->unbadgedCount, $moreCount)),
-					'data-placement' => $this->tooltipPlacement
-				]);
-			}
-			$moreBadge = $this->useBadges?Html::tag('span', "...ещё {$moreCount}", $this->moreBadgeOptions):"{$this->itemsSeparator}...ещё {$moreCount}";
-		}
-		if ([] === $result && false !== $this->emptyResult) $result = [$this->emptyResult];
 
-		if (ReflectionHelper::is_closure($this->prefix)) $this->prefix = call_user_func($this->prefix);
+		if ([] === $result && null !== $this->emptyText) $result = [$this->emptyText];
 
-		return $this->prefix.implode($this->itemsSeparator, $result).$moreBadge;
+		return $this->allPrefix.implode($this->itemsSeparator, $result).$moreBadge;
 
 	}
+
 }
