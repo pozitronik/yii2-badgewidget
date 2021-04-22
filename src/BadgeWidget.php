@@ -95,7 +95,7 @@ class BadgeWidget extends CachedWidget {
 	public function init():void {
 		parent::init();
 		BadgeWidgetAssets::register($this->getView());
-		if (null === $this->subItem) throw new InvalidConfigException('"subItem" parameter required');
+		//if (null === $this->subItem) throw new InvalidConfigException('"subItem" parameter required');
 	}
 
 	/**
@@ -184,11 +184,14 @@ class BadgeWidget extends CachedWidget {
 			return;
 		}
 		$itemsCount = count($visibleBadges);
-		if (is_int($this->visible) && $itemsCount > $this->visible) {
-			$visibleArray = $visibleBadges;
-			array_splice($visibleArray, $this->visible, $itemsCount);
-			$hiddenBadges = array_diff_key($visibleBadges, $visibleArray);
-			$visibleBadges = $visibleArray;
+		if (is_int($this->visible)) {
+			if ($itemsCount > $this->visible) {
+				$visibleArray = $visibleBadges;
+				array_splice($visibleArray, $this->visible, $itemsCount);
+				$hiddenBadges = array_diff_key($visibleBadges, $visibleArray);
+				$visibleBadges = $visibleArray;
+				return;
+			}
 			return;
 		}
 		if (is_callable($this->visible)) {
