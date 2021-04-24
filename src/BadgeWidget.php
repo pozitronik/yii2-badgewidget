@@ -35,7 +35,7 @@ use yii\helpers\Html;
  *        callable - будет вызвана функция, в которой параметром будет передан ключ элемента (если есть). Логический результат выполнения этой функции определяет отображение элемента.
  *
  * @property-write array|callable $options HTML-опции для каждого значка по умолчанию. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть массив опций для этого элемента.
- * @property-write array|false $urlScheme Схема подстановки значений атрибутов элемента в генерируемую ссылку, например:
+ * @TODO @property-write array|false $urlScheme Схема подстановки значений атрибутов элемента в генерируемую ссылку, например:
  *        $item = {"key" => 1, "value" => 100, "property" => "propertyData", "arrayParameter" => ["a" => 10, "b" => 20, "c" => 30]]}
  *        UrlOptions->scheme = ['site/index', 'id' => 'value', 'param1' => 'property', 'param2' => 'non-property', 'param3' => 'arrayParameter']
  * Получим набор параметров ссылки для элемента:
@@ -231,13 +231,15 @@ class BadgeWidget extends CachedWidget {
 			$addonText = $this->addon;
 		} elseif (is_callable($this->addon)) {
 			$addonText = call_user_func($this->addon, $visibleElementsCount, $hiddenElementsCount);
+		} elseif (false === $this->addon) {
+			return '';
 		} else {
 			throw new InvalidConfigException('Wrong type for "addon" parameter');
 		}
 		if (null === $this->addonOptions) $this->addonOptions = $this->options;
 		$addonOptions = $this->prepareItemOption($this->prepareItem(-1, $addonText), 'id');
 		Html::addCssClass($addonOptions, self::ADDON_BADGE_CLASS);
-		return Html::tag(self::BADGE_TAG, $addonText, array_merge(['class' => 'badge badge-addon'], $addonOptions));
+		return Html::tag(self::BADGE_TAG, $addonText, $addonOptions);
 	}
 
 	/**
