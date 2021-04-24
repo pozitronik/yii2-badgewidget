@@ -235,8 +235,9 @@ class BadgeWidget extends CachedWidget {
 		} else {
 			return '';
 		}
+		$addonOptions = self::PrepareItemOption($this->prepareItem(-1, $addonText), 'id', $this->addonOptions??$this->options);
 		Html::addCssClass($addonOptions, self::ADDON_BADGE_CLASS);
-		return Html::tag(self::BADGE_TAG, $addonText, self::PrepareItemOption($this->prepareItem(-1, $addonText), 'id', $this->addonOptions??$this->options));
+		return Html::tag(self::BADGE_TAG, $addonText, $addonOptions);
 	}
 
 	/**
