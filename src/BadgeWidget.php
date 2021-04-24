@@ -60,7 +60,16 @@ use yii\helpers\Html;
  * @property callable|false|string $addonTooltip Настройки всплывающей подсказки на аддоне.
  *        false - всплывающая подсказка не используется,
  *        string - текстовая подсказка,
- *        callable - будет вызвана функция, получающая на вход массив всех значений всех элементов баз всякого дополнительного форматирования, которая должна вернуть строку с текстом подсказки.
+ *        callable - будет вызван коллбек:
+ *            function(
+ *                string[] $allItems, <== содержимое всех значков (без форматирования)
+ *                string[] $visibleElements, <== содержимое видимых значков (без форматирования)
+ *                string[] $hiddenRawContents, <== содержимое скрытых значков (без форматирования)
+ *            ):string[]
+ *
+ * todo:
+ * 1) в коллбеки передавать и текущий элемент, вместе с ключом
+ * 2) в коллбек
  */
 class BadgeWidget extends CachedWidget {
 	/*Константы позиционирования подсказки*/
@@ -92,20 +101,20 @@ class BadgeWidget extends CachedWidget {
 	public $visible = 3;
 	public $addon = true;
 
+	public $urlScheme = false;
 	public $options = self::BADGE_CLASS;
-	public $addonOptions = self::ADDON_BADGE_CLASS;
 
+	public $addonOptions = self::ADDON_BADGE_CLASS;
 	public $tooltip = false;
 	public $bootstrapTooltip = true;
 	public $tooltipPlacement = self::TP_TOP;
 	public $tooltipTrigger = self::TT_HOVER;
-	public $urlScheme = false;
+	public $addonTooltip = false;
 
 	/** @var array */
 	private $_items = [];
 
 	/* Необработанные значения атрибутов, нужны для вывода подсказки в тултип на элементе аддона */
-	/** @noinspection PhpPropertyOnlyWrittenInspection */
 	private $_rawResultContents = [];
 
 	/**
@@ -319,7 +328,13 @@ class BadgeWidget extends CachedWidget {
 	 */
 	private function prepareAddonTooltipText():?string {
 		if (false === $this->addonTooltip) return null;
-		return (is_callable($this->addonTooltip))?call_user_func($this->addonTooltip, $this->_rawResultContents):$this->addonTooltip;
+		if (is_callable($this->addonTooltip)) {
+			$visibleRawContents = $this->_rawResultContents;
+			$hiddenRawContents = [];
+			$this->prepareBadges($visibleRawContents, $hiddenRawContents);
+			return call_user_func($this->addonTooltip, $this->_rawResultContents, $visibleRawContents, $hiddenRawContents);
+		}
+		return $this->addonTooltip;
 	}
 
 	/**
