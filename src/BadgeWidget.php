@@ -105,6 +105,7 @@ class BadgeWidget extends CachedWidget {
 	private $_items = [];
 
 	/* Необработанные значения атрибутов, нужны для вывода подсказки в тултип на элементе аддона */
+	/** @noinspection PhpPropertyOnlyWrittenInspection */
 	private $_rawResultContents = [];
 
 	/**
@@ -202,7 +203,7 @@ class BadgeWidget extends CachedWidget {
 	 * @param string[] $hiddenBadges Массив скрытых элементов
 	 * @throws InvalidConfigException
 	 */
-	public function prepareBadges(array &$visibleBadges, array &$hiddenBadges = []):void {
+	private function prepareBadges(array &$visibleBadges, array &$hiddenBadges = []):void {
 		if (true === $this->visible) return;/*Если отображаются все значки, обработка не требуется*/
 		if (false === $this->visible) {/*Если не отображается ни одного значка*/
 			$hiddenBadges = $visibleBadges;
@@ -253,7 +254,9 @@ class BadgeWidget extends CachedWidget {
 		} else {
 			return '';
 		}
-		$addonOptions = self::PrepareItemOption($this->prepareItem(-1, $addonText), 'id', $this->addonOptions??$this->options);
+		$item = $this->prepareItem(-1, $addonText);
+		$addonOptions = self::PrepareItemOption($item, 'id', $this->addonOptions??$this->options);
+		$addonOptions = $this->addTooltipToOptions($addonOptions, $this->prepareAddonTooltipText());
 		Html::addCssClass($addonOptions, self::ADDON_BADGE_CLASS);
 		return Html::tag(self::BADGE_TAG, $addonText, $addonOptions);
 	}
@@ -263,7 +266,7 @@ class BadgeWidget extends CachedWidget {
 	 * @param Model $item
 	 * @return string
 	 */
-	public function prepareMapAttribute(Model $item):string {
+	private function prepareMapAttribute(Model $item):string {
 		if (null === $this->mapAttribute) {
 			if ($item->hasProperty('primaryKey')) {/*assume ActiveRecord*/
 				return 'primaryKey';
@@ -276,34 +279,47 @@ class BadgeWidget extends CachedWidget {
 	}
 
 	/**
-	 * Добавляет элементу bootstrap-tooltip
+	 * Добавляет в набор HTML-параметров данные для генерации подсказки
+	 */
+	private function addTooltipToOptions(array $itemOptions, ?string $tooltipText = null):array {
+		if (null === $tooltipText) return $itemOptions;
+		$tooltipOptions = $this->bootstrapTooltip?[
+			'class' => 'add-tooltip',
+			'data-toggle' => 'tooltip',
+			'data-trigger' => $this->tooltipTrigger,
+			'data-original-title' => $tooltipText,
+			'title' => $tooltipText,
+			'data-placement' => $this->tooltipPlacement
+		]:[
+			'title' => $tooltipText
+		];
+
+		return ArrayHelper::mergeImplode(' ', $itemOptions, $tooltipOptions);
+	}
+
+	/**
 	 * @param Model $item
-	 * @param array $itemOptions
 	 * @param string $mapAttribute
-	 * @return array
+	 * @return string|null
 	 * @throws Throwable
 	 */
-	public function prepareTooltip(Model $item, string $mapAttribute, array $itemOptions):array {
-		if (false === $this->tooltip) return $mapAttribute;
+	private function prepareTooltipText(Model $item, string $mapAttribute):?string {
+		if (false === $this->tooltip) return null;
 		$tooltip = $this->tooltip;
 		if (is_callable($tooltip)) {
 			$tooltip = $tooltip($item->{$mapAttribute});
 		} elseif (is_array($tooltip)) {
 			$tooltip = ArrayHelper::getValue($tooltip, $item->{$mapAttribute});
 		}
+		return $tooltip;
+	}
 
-		$tooltipOptions = $this->bootstrapTooltip?[
-			'class' => 'add-tooltip',
-			'data-toggle' => 'tooltip',
-			'data-trigger' => $this->tooltipTrigger,
-			'data-original-title' => $tooltip,
-			'title' => $tooltip,
-			'data-placement' => $this->tooltipPlacement
-		]:[
-			'title' => $tooltip
-		];
-
-		return ArrayHelper::mergeImplode(' ', $itemOptions, $tooltipOptions);
+	/**
+	 * @return string|null
+	 */
+	private function prepareAddonTooltipText():?string {
+		if (false === $this->addonTooltip) return null;
+		return (is_callable($this->addonTooltip))?call_user_func($this->addonTooltip, $this->_rawResultContents):$this->addonTooltip;
 	}
 
 	/**
@@ -312,7 +328,7 @@ class BadgeWidget extends CachedWidget {
 	 * @return string
 	 * @throws Throwable
 	 */
-	public function prepareUrl(Model $item, string $content):string {
+	private function prepareUrl(Model $item, string $content):string {
 		if (false === $this->urlScheme) return $content;
 		$arrayedParameters = [];
 		$currentLinkScheme = $this->urlScheme;
@@ -353,7 +369,7 @@ class BadgeWidget extends CachedWidget {
 			/*Добавление ссылки к элементу*/
 			$itemValue = $this->prepareUrl($item, $itemValue);
 			$itemOptions = self::PrepareItemOption($item, $mapAttribute, $this->options);
-			$itemOptions = $this->prepareTooltip($item, $mapAttribute, $itemOptions);
+			$itemOptions = $this->addTooltipToOptions($itemOptions, $this->prepareTooltipText($item, $mapAttribute));
 			$badges[$item->{$mapAttribute}] = $this->prepareBadge($itemValue, $itemOptions);
 		}
 		/*Из переданных данных не удалось собрать массив, показываем выбранную заглушку*/
