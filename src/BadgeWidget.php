@@ -156,11 +156,12 @@ class BadgeWidget extends CachedWidget {
 	 * Возвращает набор параметров для конкретного элемента.
 	 * @param Model $item
 	 * @param string $mapAttribute
+	 * @param array|callable $options
 	 * @return array
 	 * @throws Throwable
 	 */
-	public function prepareItemOption(Model $item, string $mapAttribute):array {
-		return (is_callable($this->options))?call_user_func($this->options, $item->{$mapAttribute}):$this->options;
+	private static function PrepareItemOption(Model $item, string $mapAttribute, $options):array {
+		return (is_callable($options))?$options($item->{$mapAttribute}):$options;
 	}
 
 	/**
@@ -234,10 +235,8 @@ class BadgeWidget extends CachedWidget {
 		} else {
 			return '';
 		}
-		if (null === $this->addonOptions) $this->addonOptions = $this->options;
-		$addonOptions = $this->prepareItemOption($this->prepareItem(-1, $addonText), 'id');
 		Html::addCssClass($addonOptions, self::ADDON_BADGE_CLASS);
-		return Html::tag(self::BADGE_TAG, $addonText, $addonOptions);
+		return Html::tag(self::BADGE_TAG, $addonText, self::PrepareItemOption($this->prepareItem(-1, $addonText), 'id', $this->addonOptions??$this->options));
 	}
 
 	/**
@@ -313,8 +312,7 @@ class BadgeWidget extends CachedWidget {
 			/*Добавление ссылки к элементу*/
 //			$itemValue = $this->_urlOptions->prepareUrl($item, $itemValue);
 
-			$itemOptions = $this->prepareItemOption($item, $mapAttribute);
-			$badges[$item->{$mapAttribute}] = $this->prepareBadge($itemValue, $itemOptions);
+			$badges[$item->{$mapAttribute}] = $this->prepareBadge($itemValue, self::PrepareItemOption($item, $mapAttribute, $this->options));
 
 //			$itemOptions = $this->_tooltipOptions->prepareTooltip($item, $itemOptions, $this->_rawResultContents);
 
