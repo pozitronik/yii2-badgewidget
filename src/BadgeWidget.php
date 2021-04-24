@@ -18,7 +18,7 @@ use yii\helpers\Html;
  * @property-write string $subItem Отображаемый ключ (строка => null, массив => key, модель => атрибут/свойство/переменная, замыкание => параметр). Виджет пытается просчитать его автоматически.
  * @property-write bool $useBadges Включает/отключает генерацию значков.
  * @property-write string|null $itemsSeparator Строка-разделитель между элементами. null - не использовать разделитель.
- * @property-write string|null $emptyText Текст иконки, подставляемой при отсутствии обрабатываемых данных. null - не подставлять текст
+ * @property-write string|null $emptyText Текст иконки, подставляемой при отсутствии обрабатываемых данных. null - не подставлять текст.
  * @property-write bool $iconize Содержимое бейджа сокращается до псевдоиконки.
  *
  * @property-write string|callable $innerPrefix Строка, добавляемая перед текстом внутри значка. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
@@ -35,7 +35,7 @@ use yii\helpers\Html;
  *        callable - будет вызвана функция, в которой параметром будет передан ключ элемента (если есть). Логический результат выполнения этой функции определяет отображение элемента.
  *
  * @property-write array|callable $options HTML-опции для каждого значка по умолчанию. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть массив опций для этого элемента.
- * @TODO @property-write array|false $urlScheme Схема подстановки значений атрибутов элемента в генерируемую ссылку, например:
+ * @property-write array|false $urlScheme Схема подстановки значений атрибутов элемента в генерируемую ссылку, например:
  *        $item = {"key" => 1, "value" => 100, "property" => "propertyData", "arrayParameter" => ["a" => 10, "b" => 20, "c" => 30]]}
  *        UrlOptions->scheme = ['site/index', 'id' => 'value', 'param1' => 'property', 'param2' => 'non-property', 'param3' => 'arrayParameter']
  * Получим набор параметров ссылки для элемента:
@@ -311,7 +311,7 @@ class BadgeWidget extends CachedWidget {
 
 			if ($this->iconize) $itemValue = Utils::ShortifyString($itemValue);
 			/*Добавление ссылки к элементу*/
-//			$itemValue = $this->_urlOptions->prepareUrl($item, $itemValue);
+			$itemValue = $this->prepareUrl($item, $itemValue);
 
 			$badges[$item->{$mapAttribute}] = $this->prepareBadge($itemValue, self::PrepareItemOption($item, $mapAttribute, $this->options));
 
