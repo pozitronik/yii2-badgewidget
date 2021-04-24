@@ -114,7 +114,7 @@ class BadgeWidget extends CachedWidget {
 		parent::init();
 		BadgeWidgetAssets::register($this->getView());
 		if ($this->bootstrapTooltip) {
-			$this->view->registerJs("$('[data-toggle=\"tooltip\]').tooltip()");
+			$this->view->registerJs("$('[data-toggle=\"tooltip\"]').tooltip()");
 		}
 	}
 
