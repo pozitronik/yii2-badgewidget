@@ -47,7 +47,9 @@ use yii\helpers\Html;
  *        string - одна подсказка на все элементы,
  *        string[] - массив подсказок, сопоставляемый с элементами по ключу,
  *        callable - будет вызвана функция, получающая на вход ключ элемента (если есть), которая должна вернуть строку с текстом подсказки.
+ * @property-write bool $bootstrapTooltip Использование подсказок bootstrap, если false - то будут использованы нативные браузерные подсказки.
  * @property-write string $tooltipPlacement Позиция появления всплывающей подсказки, см. TP_*-константы. Применяется также и для всплывающей подсказке на аддоне.
+ * @property-write string $tooltipTrigger Триггер появления подсказок, см. TT_*-константы. Применяется также и для всплывающей подсказке на аддоне.
  *
  * @property bool|string|callable $addon Элемент, используемый для отображения информации о скрытых значках и разворачивании всего списка. Значения:
  *        false - не будет показан ни в каких случаях,
@@ -56,15 +58,20 @@ use yii\helpers\Html;
  *        callable - будет вызвана функция, получающая на вход первым параметром количество видимых элементов, вторым параметром количество скрытых элементов, которая должна вернуть строку с содержимым.
  * @property array|callable|null $addonOptions HTML-опции аддона. Если null - копируется из $options
  * @property callable|false|string $addonTooltip Настройки всплывающей подсказки на аддоне.
- *		false - всплывающая подсказка не используется,
- * 		string - текстовая подсказка,
- * 		callable - будет вызвана функция, получающая на вход массив всех значений всех элементов баз всякого дополнительного форматирования, которая должна вернуть строку с текстом подсказки.
+ *        false - всплывающая подсказка не используется,
+ *        string - текстовая подсказка,
+ *        callable - будет вызвана функция, получающая на вход массив всех значений всех элементов баз всякого дополнительного форматирования, которая должна вернуть строку с текстом подсказки.
  */
 class BadgeWidget extends CachedWidget {
+	/*Константы позиционирования подсказки*/
 	public const TP_TOP = 'top';
 	public const TP_RIGHT = 'right';
 	public const TP_BOTTOM = 'bottom';
 	public const TP_LEFT = 'left';
+	/*Константы триггеров подсказки*/
+	public const TT_HOVER = 'hover';
+	public const TT_CLICK = 'click';
+	public const TT_FOCUS = 'focus';
 
 	/* Тег, используемый для генерации значков */
 	private const BADGE_TAG = 'span';
@@ -89,7 +96,9 @@ class BadgeWidget extends CachedWidget {
 	public $addonOptions = self::ADDON_BADGE_CLASS;
 
 	public $tooltip = false;
+	public $bootstrapTooltip = true;
 	public $tooltipPlacement = self::TP_TOP;
+	public $tooltipTrigger = self::TT_HOVER;
 	public $urlScheme = false;
 
 	/** @var array */
@@ -104,7 +113,9 @@ class BadgeWidget extends CachedWidget {
 	public function init():void {
 		parent::init();
 		BadgeWidgetAssets::register($this->getView());
-		//if (null === $this->subItem) throw new InvalidConfigException('"subItem" parameter required');
+		if ($this->bootstrapTooltip) {
+			$this->view->registerJs("$('[data-toggle=\"tooltip\]').tooltip()");
+		}
 	}
 
 	/**
@@ -281,12 +292,18 @@ class BadgeWidget extends CachedWidget {
 			$tooltip = ArrayHelper::getValue($tooltip, $item->{$mapAttribute});
 		}
 
-		return ArrayHelper::mergeImplode(' ', $itemOptions, [
+		$tooltipOptions = $this->bootstrapTooltip?[
 			'class' => 'add-tooltip',
 			'data-toggle' => 'tooltip',
+			'data-trigger' => $this->tooltipTrigger,
 			'data-original-title' => $tooltip,
+			'title' => $tooltip,
 			'data-placement' => $this->tooltipPlacement
-		]);
+		]:[
+			'title' => $tooltip
+		];
+
+		return ArrayHelper::mergeImplode(' ', $itemOptions, $tooltipOptions);
 	}
 
 	/**
