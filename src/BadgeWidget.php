@@ -17,8 +17,8 @@ use yii\helpers\Html;
  * @property-write string|array|object|callable $items Данные для обработки (строка, массив, модель, замыкание). Преобразуются в массив при обработке.
  * @property-write string $subItem Отображаемый ключ (строка => null, массив => key, модель => атрибут/свойство/переменная, замыкание => параметр). Виджет пытается просчитать его автоматически.
  * @property-write bool $useBadges Включает/отключает генерацию значков.
- * @property-write string $itemsSeparator Строка-разделитель между элементами.
- * @property-write string|null $emptyText Текст иконки, подставляемой при отсутствии обрабатываемых данных
+ * @property-write string|null $itemsSeparator Строка-разделитель между элементами. null - не использовать разделитель.
+ * @property-write string|null $emptyText Текст иконки, подставляемой при отсутствии обрабатываемых данных. null - не подставлять текст
  * @property-write bool $iconize Содержимое бейджа сокращается до псевдоиконки.
  *
  * @property-write string|callable $innerPrefix Строка, добавляемая перед текстом внутри значка. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
@@ -47,7 +47,7 @@ use yii\helpers\Html;
  *
  * @property bool|string|callable $addon Элемент, используемый для отображения информации о скрытых значках и разворачивании всего списка. Значения:
  *        false - не будет показан ни в каких случаях,
- *        true - будет показан сгенерированный элемент, отображающий информацию о скрытых значках,
+ *        true - будет показан сгенерированный элемент, отображающий информацию о скрытых значках (при их наличии),
  *        string - будет отображена заданная строка,
  *        callable - будет вызвана функция, получающая на вход первым параметром количество видимых элементов, вторым параметром количество скрытых элементов, которая должна вернуть строку с содержимым.
  * @property array|callable|null $addonOptions HTML-опции аддона. Если null - копируется из $options
@@ -64,7 +64,7 @@ class BadgeWidget extends CachedWidget {
 
 	public $subItem;
 	public $useBadges = true;
-	public $itemsSeparator = ', ';
+	public $itemsSeparator = false;
 	public $emptyText;
 	public $iconize = false;
 	public $innerPrefix = '';
@@ -74,6 +74,7 @@ class BadgeWidget extends CachedWidget {
 	public $allPrefix = '';
 	public $mapAttribute;
 	public $visible = 3;
+	public $addon = true;
 
 	public $options = ['class' => 'badge'];
 	public $addonOptions = ['class' => 'badge addon-badge'];
@@ -137,14 +138,15 @@ class BadgeWidget extends CachedWidget {
 	/**
 	 * Вытаскивает из подготовленной модели значение для отображения
 	 * @param Model $item
+	 * @param string $mapAttribute
 	 * @return string
 	 * @throws Throwable
 	 */
-	private function prepareValue(Model $item):string {
+	private function prepareValue(Model $item, string $mapAttribute):string {
 		$itemValue = ArrayHelper::getValue($item, $this->subItem);/*Текстовое значение значка*/
 		$this->_rawResultContents[] = $itemValue;
-		$prefix = (is_callable($this->innerPrefix))?call_user_func($this->innerPrefix, $item):$this->innerPrefix;
-		$postfix = (is_callable($this->innerPostfix))?call_user_func($this->innerPostfix, $item):$this->innerPostfix;
+		$prefix = (is_callable($this->innerPrefix))?call_user_func($this->innerPrefix, $mapAttribute):$this->innerPrefix;
+		$postfix = (is_callable($this->innerPostfix))?call_user_func($this->innerPostfix, $mapAttribute):$this->innerPostfix;
 
 		return $prefix.$itemValue.$postfix;
 	}
@@ -299,9 +301,10 @@ class BadgeWidget extends CachedWidget {
 			if (null === $item) continue;
 
 			$item = $this->prepareItem($index, $item);
-			$itemValue = $this->prepareValue($item);
-
 			$mapAttribute = $this->prepareMapAttribute($item);
+			$itemValue = $this->prepareValue($item, $mapAttribute);
+
+
 
 			if ($this->iconize) $itemValue = Utils::ShortifyString($itemValue);
 			/*Добавление ссылки к элементу*/
@@ -336,7 +339,7 @@ class BadgeWidget extends CachedWidget {
 			}
 		}
 
-		return $this->allPrefix.implode($this->itemsSeparator, $badges);
+		return $this->allPrefix.implode($this->itemsSeparator??'', $badges);
 
 	}
 
