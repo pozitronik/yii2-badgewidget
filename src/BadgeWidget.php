@@ -23,9 +23,8 @@ use yii\helpers\Html;
  *
  * @property-write string|callable $innerPrefix Строка, добавляемая перед текстом внутри значка. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
  * @property-write string|callable $innerPostfix Строка, добавляемая после текста внутри значка. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
- * @property-write string|callable $outerPrefix Строка, добавляемая перед текстом снаружи значка. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
- * @property-write string|callable $outerPostfix Строка, добавляемая перед текстом внутри значка. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
- * @property-write string $allPrefix Строка, добавляемая перед всем массивом значков.
+ * @TODO @property-write string|callable $outerPrefix Строка, добавляемая перед текстом снаружи значка. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
+ * @TODO @property-write string|callable $outerPostfix Строка, добавляемая перед текстом внутри значка. Если передано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
  *
  * @property-write null|string $mapAttribute Атрибут, значение которого будет использоваться как ключевое при сопоставлении элементов с массивами параметров. Если не задан, виджет попытается вычислить его самостоятельно, взяв ключевой атрибут для ActiveRecord или ключ для элемента массива.
  *
@@ -61,6 +60,9 @@ class BadgeWidget extends CachedWidget {
 
 	/* Тег, используемый для генерации значков */
 	private const BADGE_TAG = 'span';
+	/* Классы значков (всегда добавляются, независимо от пользовательских классов)*/
+	private const BADGE_CLASS = ['class' => 'badge'];
+	private const ADDON_BADGE_CLASS = ['class' => 'badge addon-badge'];
 
 	public $subItem;
 	public $useBadges = true;
@@ -71,13 +73,12 @@ class BadgeWidget extends CachedWidget {
 	public $innerPostfix = '';
 	public $outerPrefix = '';
 	public $outerPostfix = '';
-	public $allPrefix = '';
 	public $mapAttribute;
 	public $visible = 3;
 	public $addon = true;
 
-	public $options = ['class' => 'badge'];
-	public $addonOptions = ['class' => 'badge addon-badge'];
+	public $options = self::BADGE_CLASS;
+	public $addonOptions = self::ADDON_BADGE_CLASS;
 
 	/*todo*/
 	public $tooltip = false;
@@ -145,8 +146,8 @@ class BadgeWidget extends CachedWidget {
 	private function prepareValue(Model $item, string $mapAttribute):string {
 		$itemValue = ArrayHelper::getValue($item, $this->subItem);/*Текстовое значение значка*/
 		$this->_rawResultContents[] = $itemValue;
-		$prefix = (is_callable($this->innerPrefix))?call_user_func($this->innerPrefix,  $item->{$mapAttribute}):$this->innerPrefix;
-		$postfix = (is_callable($this->innerPostfix))?call_user_func($this->innerPostfix,  $item->{$mapAttribute}):$this->innerPostfix;
+		$prefix = (is_callable($this->innerPrefix))?call_user_func($this->innerPrefix, $item->{$mapAttribute}):$this->innerPrefix;
+		$postfix = (is_callable($this->innerPostfix))?call_user_func($this->innerPostfix, $item->{$mapAttribute}):$this->innerPostfix;
 
 		return $prefix.$itemValue.$postfix;
 	}
@@ -169,7 +170,11 @@ class BadgeWidget extends CachedWidget {
 	 * @return string
 	 */
 	private function prepareBadge(string $text, array $elementOptions):string {
-		return $this->useBadges?Html::tag(self::BADGE_TAG, $text, array_merge(['class' => 'badge'], $elementOptions)):$text;
+		if ($this->useBadges) {
+			Html::addCssClass($elementOptions, self::BADGE_CLASS);
+			return Html::tag(self::BADGE_TAG, $text, $elementOptions);
+		}
+		return $text;
 	}
 
 	/**
@@ -231,7 +236,7 @@ class BadgeWidget extends CachedWidget {
 		}
 		if (null === $this->addonOptions) $this->addonOptions = $this->options;
 		$addonOptions = $this->prepareItemOption($this->prepareItem(-1, $addonText), 'id');
-
+		Html::addCssClass($addonOptions, self::ADDON_BADGE_CLASS);
 		return Html::tag(self::BADGE_TAG, $addonText, array_merge(['class' => 'badge badge-addon'], $addonOptions));
 	}
 
@@ -304,8 +309,6 @@ class BadgeWidget extends CachedWidget {
 			$mapAttribute = $this->prepareMapAttribute($item);
 			$itemValue = $this->prepareValue($item, $mapAttribute);
 
-
-
 			if ($this->iconize) $itemValue = Utils::ShortifyString($itemValue);
 			/*Добавление ссылки к элементу*/
 //			$itemValue = $this->_urlOptions->prepareUrl($item, $itemValue);
@@ -325,7 +328,6 @@ class BadgeWidget extends CachedWidget {
 				'innerPostfix' => $this->innerPostfix,
 				'outerPrefix' => $this->outerPrefix,
 				'outerPostfix' => $this->outerPostfix,
-				'allPrefix' => $this->allPrefix,
 				'options' => $this->options,
 //				'urlOptions' => $this->urlOptions,
 //				'tooltipOptions' => $this->tooltipOptions
@@ -339,7 +341,7 @@ class BadgeWidget extends CachedWidget {
 			}
 		}
 
-		return $this->allPrefix.implode($this->itemsSeparator??'', $badges);
+		return implode($this->itemsSeparator??'', $badges);
 
 	}
 
