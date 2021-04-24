@@ -190,11 +190,9 @@ class BadgeWidget extends CachedWidget {
 			$visibleBadges = [];
 			return;
 		}
-		$itemsCount = count($visibleBadges);
 		if (is_int($this->visible)) {
-			if ($itemsCount > $this->visible) {
-				$visibleArray = $visibleBadges;
-				array_splice($visibleArray, $this->visible, $itemsCount);
+			if (count($visibleBadges) > $this->visible) {
+				$visibleArray = array_slice($visibleBadges, 0, $this->visible, true);
 				$hiddenBadges = array_diff_key($visibleBadges, $visibleArray);
 				$visibleBadges = $visibleArray;
 				return;
@@ -231,10 +229,10 @@ class BadgeWidget extends CachedWidget {
 			$addonText = $this->addon;
 		} elseif (is_callable($this->addon)) {
 			$addonText = call_user_func($this->addon, $visibleElementsCount, $hiddenElementsCount);
-		} elseif (false === $this->addon) {
-			return '';
-		} else {
+		} elseif (false !== $this->addon) {
 			throw new InvalidConfigException('Wrong type for "addon" parameter');
+		} else {
+			return '';
 		}
 		if (null === $this->addonOptions) $this->addonOptions = $this->options;
 		$addonOptions = $this->prepareItemOption($this->prepareItem(-1, $addonText), 'id');
