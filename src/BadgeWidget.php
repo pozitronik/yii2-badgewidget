@@ -64,7 +64,7 @@ class BadgeWidget extends CachedWidget {
 
 	public $subItem;
 	public $useBadges = true;
-	public $itemsSeparator = false;
+	public $itemsSeparator;
 	public $emptyText;
 	public $iconize = false;
 	public $innerPrefix = '';
@@ -145,8 +145,8 @@ class BadgeWidget extends CachedWidget {
 	private function prepareValue(Model $item, string $mapAttribute):string {
 		$itemValue = ArrayHelper::getValue($item, $this->subItem);/*Текстовое значение значка*/
 		$this->_rawResultContents[] = $itemValue;
-		$prefix = (is_callable($this->innerPrefix))?call_user_func($this->innerPrefix, $mapAttribute):$this->innerPrefix;
-		$postfix = (is_callable($this->innerPostfix))?call_user_func($this->innerPostfix, $mapAttribute):$this->innerPostfix;
+		$prefix = (is_callable($this->innerPrefix))?call_user_func($this->innerPrefix,  $item->{$mapAttribute}):$this->innerPrefix;
+		$postfix = (is_callable($this->innerPostfix))?call_user_func($this->innerPostfix,  $item->{$mapAttribute}):$this->innerPostfix;
 
 		return $prefix.$itemValue.$postfix;
 	}
