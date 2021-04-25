@@ -33,9 +33,9 @@ use yii\helpers\Html;
  *
  * @property-write null|string $keyAttribute Атрибут, значение которого будет использоваться как ключевое, при сопоставлении элементов с массивами параметров и при передаче данных в коллбеки.
  * Если параметр не задан, виджет попытается вычислить его самостоятельно для каждого элемента, в зависимости от его типа:
- *            массивы: ключ значения. Элементы массивов приводятся к виду Model(['id' => $key, 'value' => $value]), т.е. $mapAttribute будет установлен, как id.
- *            ActiveRecord: ключевой атрибут,
- *            объекты с атрибутом id: id.
+ *        массивы: ключ значения. Элементы массивов приводятся к виду Model(['id' => $key, 'value' => $value]), т.е. $mapAttribute будет установлен, как id.
+ *        ActiveRecord: ключевой атрибут,
+ *        объекты с атрибутом id: id.
  * Если вычислить ключевой атрибут невозможно, то не будут работать все сопоставления и коллбеки, опирающиеся на него.
  *
  * @property-write bool $useBadges Включает/отключает генерацию значков.
@@ -51,10 +51,10 @@ use yii\helpers\Html;
  * @property-write string|callable $outerPostfix Строка, добавляемая после текста снаружи значка.
  *
  * В случае, если параметр задаётся замыканием, коллбек имеет вид:
- *            function(
- *                mixed $keyAttributeValue, <== значение элемента по ключевому атрибуту,
- *                Model $item <== текущий элемент
- *            ):string <== добавляемое значение
+ *        function(
+ *            mixed $keyAttributeValue, <== значение элемента по ключевому атрибуту,
+ *            Model $item <== текущий элемент
+ *        ):string <== добавляемое значение
  *
  * @property-write bool|int|callable $visible Параметр, определяющий, какие элементы будут отображены.
  *        true - будут отображены все элементы,
@@ -67,10 +67,10 @@ use yii\helpers\Html;
  *            ):bool <== true для отображения элемента
  *
  * @property-write array|callable $options HTML-опции для каждого значка по умолчанию. В случае, если параметр задаётся замыканием, коллбек имеет вид:
- *            function(
- *                mixed $mapAttributeValue, <== значение элемента по ключевому атрибуту,
- *                Model $item <== текущий элемент
- *            ):array <== массив HTML-опций для значка элемента
+ *        function(
+ *            mixed $mapAttributeValue, <== значение элемента по ключевому атрибуту,
+ *            Model $item <== текущий элемент
+ *        ):array <== массив HTML-опций для значка элемента
  *
  * @property-write array|false $urlScheme Схема подстановки значений атрибутов элемента в генерируемую ссылку, например:
  *        $item = {"key" => 1, "value" => 100, "property" => "propertyData", "arrayParameter" => ["a" => 10, "b" => 20, "c" => 30]]}
@@ -102,6 +102,9 @@ use yii\helpers\Html;
  *                int $visibleBadgesCount, <== количество отображаемых значков,
  *                int $hiddenBadgesCount <== количество скрытых значков
  *            ):string <== текст значка
+ * Аддон не будет отображён, если нет скрытых значков.
+ *
+ * @property bool $expandAddon Если аддон есть и отображён, то он может быть использован как кнопка отображения скрытых значков (по щелчку на элементе). false отключает эту функциональность.
  *
  * @property array|callable|null $addonOptions HTML-опции аддона. Формат совпадает с $options. Если null - копируется значение из $options.
  * @property callable|false|string $addonTooltip Настройки всплывающей подсказки на аддоне.
@@ -128,9 +131,12 @@ class BadgeWidget extends CachedWidget {
 
 	/* Тег, используемый для генерации значков */
 	private const BADGE_TAG = 'span';
+	/* Тег, используемый для генерации блока скрытых значков */
+	private const HIDDEN_TAG = 'span';
 	/* Классы значков (всегда добавляются, независимо от пользовательских классов) */
 	private const BADGE_CLASS = ['class' => 'badge'];
 	private const ADDON_BADGE_CLASS = ['class' => 'badge addon-badge'];
+	private const HIDDEN_CLASS = ['class' => 'hidden'];
 
 	public $subItem;
 	public $useBadges = true;
@@ -144,6 +150,7 @@ class BadgeWidget extends CachedWidget {
 	public $keyAttribute;
 	public $visible = 3;
 	public $addon = true;
+	public $expandAddon = true;
 
 	public $urlScheme = false;
 	public $options = self::BADGE_CLASS;
@@ -309,6 +316,7 @@ class BadgeWidget extends CachedWidget {
 		$addonOptions = $this->addonOptions??$this->options;
 		$addonOptions = is_callable($addonOptions)?$addonOptions($this->_keyValue, $item):$addonOptions;
 		$addonOptions = $this->addTooltipToOptions($addonOptions, $this->prepareAddonTooltipText());
+		$addonOptions['id'] = "badge-widget-{$this->id}-addon";
 		Html::addCssClass($addonOptions, self::ADDON_BADGE_CLASS);
 		return Html::tag(self::BADGE_TAG, $addonText, $addonOptions);
 	}
@@ -455,7 +463,12 @@ class BadgeWidget extends CachedWidget {
 			$this->prepareBadges($badges, $hiddenBadges);
 			if ([] !== $hiddenBadges) {
 				$badges[] = $this->prepareAddonBadge(count($badges), count($hiddenBadges));
+				if ($this->expandAddon) {
+					$badges[] = Html::tag(self::HIDDEN_TAG, implode($this->itemsSeparator??'', $hiddenBadges), self::HIDDEN_CLASS + ['id' => "badge-widget-{$this->id}-hidden"]);
+					$this->view->registerJs("EnableExpandAddon({$this->id})");
+				}
 			}
+
 		}
 
 		return implode($this->itemsSeparator??'', $badges);
