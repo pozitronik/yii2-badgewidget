@@ -13,15 +13,13 @@ use yii\helpers\Html;
 
 /**
  * Class BadgeWidget
- * @property-write string|string[]|object|object[]|callable $items Данные для генерации значков. todo: проверить object
+ * @property-write string|string[]|object|object[]|callable|callable[] $items Данные для генерации значков.
  *        string - будет отображён один значок, содержащий эту строку,
  *        string[] - будут отображены значки для каждого значения массива,
  *        object - будет отображён значок с содержимым атрибута, указанного в $subItem,
  *        object[] - будут отображены значки для каждого атрибута объекта, указанного в $subItem,
  *        callable - будет вызван коллбек вида:
- *            function(
- *                string $subItem <== параметр BadgeWidget::$subItem,
- *            ):string|string[] <== данные для отображения, обрабатываемые согласно вышеуказанному,
+ *            function():string|string[] <== данные для отображения, обрабатываемые согласно вышеуказанному,
  *        callable[] - для каждого значения будет вызван коллбек вида:
  *            function(
  *                int|string $key <== ключ/индекс значения,
@@ -184,7 +182,7 @@ class BadgeWidget extends CachedWidget {
 	 */
 	public function setItems($items):void {
 		$this->_items = $items;
-		if (is_callable($this->_items)) $this->_items = call_user_func($this->_items, $this->subItem);
+		if (is_callable($this->_items)) $this->_items = call_user_func($this->_items);
 		if (!is_array($this->_items)) $this->_items = [$this->_items];
 	}
 
