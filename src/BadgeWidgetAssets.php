@@ -20,6 +20,7 @@ class BadgeWidgetAssets extends AssetBundle {
 	public function init():void {
 		$this->sourcePath = __DIR__.'/assets';
 		$this->css = ['css/badge.css'];
+		$this->js = ['js/badge.js'];
 		parent::init();
 	}
 }
