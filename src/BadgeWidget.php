@@ -458,20 +458,21 @@ class BadgeWidget extends CachedWidget {
 				'tooltip' => $this->tooltip
 			]);
 		}
+		$hiddenBlock = '';
 		if ($this->useBadges) {
 			$hiddenBadges = [];
 			$this->prepareBadges($badges, $hiddenBadges);
 			if ([] !== $hiddenBadges) {
 				$badges[] = $this->prepareAddonBadge(count($badges), count($hiddenBadges));
 				if ($this->expandAddon) {
-					$badges[] = Html::tag(self::HIDDEN_TAG, implode($this->itemsSeparator??'', $hiddenBadges), self::HIDDEN_CLASS + ['id' => "badge-widget-{$this->id}-hidden"]);
+					$hiddenBlock = Html::tag(self::HIDDEN_TAG, implode($this->itemsSeparator??'', $hiddenBadges), self::HIDDEN_CLASS + ['id' => "badge-widget-{$this->id}-hidden"]);
 					$this->view->registerJs("EnableExpandAddon('{$this->id}')");
 				}
 			}
 
 		}
 
-		return implode($this->itemsSeparator??'', $badges);
+		return implode($this->itemsSeparator??'', $badges).$hiddenBlock;
 
 	}
 
