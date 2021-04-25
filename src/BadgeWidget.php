@@ -40,13 +40,15 @@ use yii\helpers\Html;
  *
  * @property-write bool $useBadges Включает/отключает генерацию значков.
  * @property-write string|null $itemsSeparator Строка-разделитель между элементами. null - не использовать разделитель.
- * @property-write string|string[]|null $emptyText Текст иконки, подставляемой при отсутствии обрабатываемых данных. null - не подставлять текст.
+ * @property-write string|string[]|null $emptyText Текст значка, подставляемой при отсутствии обрабатываемых данных. null - не подставлять текст.
+ * Если передано массивом, отображается по одному значку для каждого элемента.
+ *
  * @property-write bool $iconize Содержимое бейджа сокращается до псевдоиконки.
  *
- * @property-write string|callable $innerPrefix Строка, добавляемая перед текстом внутри значка. Если задано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
- * @property-write string|callable $innerPostfix Строка, добавляемая после текста внутри значка. Если задано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
- * @TODO @property-write string|callable $outerPrefix Строка, добавляемая перед текстом снаружи значка. Если задано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
- * @TODO @property-write string|callable $outerPostfix Строка, добавляемая перед текстом внутри значка. Если задано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
+ * @property-write string|callable $innerPrefix Строка, добавляемая перед текстом внутри значка.
+ * @property-write string|callable $innerPostfix Строка, добавляемая после текста внутри значка.
+ * @TODO @property-write string|callable $outerPrefix Строка, добавляемая перед текстом снаружи значка.
+ * @TODO @property-write string|callable $outerPostfix Строка, добавляемая перед текстом внутри значка.
  *
  * В случае, если параметр задаётся замыканием, коллбек имеет вид:
  *            function(
@@ -114,19 +116,19 @@ use yii\helpers\Html;
  *
  */
 class BadgeWidget extends CachedWidget {
-	/*Константы позиционирования подсказки*/
+	/* Константы позиционирования подсказки */
 	public const TP_TOP = 'top';
 	public const TP_RIGHT = 'right';
 	public const TP_BOTTOM = 'bottom';
 	public const TP_LEFT = 'left';
-	/*Константы триггеров подсказки*/
+	/* Константы триггеров подсказки */
 	public const TT_HOVER = 'hover';
 	public const TT_CLICK = 'click';
 	public const TT_FOCUS = 'focus';
 
 	/* Тег, используемый для генерации значков */
 	private const BADGE_TAG = 'span';
-	/* Классы значков (всегда добавляются, независимо от пользовательских классов)*/
+	/* Классы значков (всегда добавляются, независимо от пользовательских классов) */
 	private const BADGE_CLASS = ['class' => 'badge'];
 	private const ADDON_BADGE_CLASS = ['class' => 'badge addon-badge'];
 
@@ -158,6 +160,9 @@ class BadgeWidget extends CachedWidget {
 
 	/* Необработанные значения атрибутов, нужны для вывода подсказки в тултип на элементе аддона */
 	private $_rawResultContents = [];
+	/* Вычисленные параметры сопоставлений на каждую итерацию */
+	private $_keyAttribute;
+	private $_keyValue;
 
 	/**
 	 * Функция инициализации и нормализации свойств виджета
@@ -178,7 +183,7 @@ class BadgeWidget extends CachedWidget {
 	}
 
 	/**
-	 * @param array|callable|object|string $items
+	 * @param mixed $items
 	 */
 	public function setItems($items):void {
 		$this->_items = $items;
@@ -194,11 +199,9 @@ class BadgeWidget extends CachedWidget {
 	 * @throws InvalidConfigException
 	 */
 	private function prepareItem($index, $item):Model {
-		if (is_callable($item)) $item = call_user_func($item, $index);
+		if (is_callable($item)) $item = $item($index);
 		if (!is_object($item)) {
-			if (!is_scalar($item)) {
-				throw new InvalidConfigException("Non-scalar values is unsupported.");
-			}
+			if (!is_scalar($item)) throw new InvalidConfigException("Non-scalar values is unsupported.");
 			return new DynamicModel([
 				'id' => $index,
 				$this->subItem => $item
@@ -210,29 +213,20 @@ class BadgeWidget extends CachedWidget {
 	/**
 	 * Вытаскивает из подготовленной модели значение для отображения
 	 * @param Model $item
-	 * @param string $mapAttribute
 	 * @return string
 	 * @throws Throwable
 	 */
-	private function prepareValue(Model $item, string $mapAttribute):string {
+	private function prepareValue(Model $item):string {
 		$itemValue = ArrayHelper::getValue($item, $this->subItem);/*Текстовое значение значка*/
-		$this->_rawResultContents[$item->{$mapAttribute}] = $itemValue;
-		$prefix = (is_callable($this->innerPrefix))?call_user_func($this->innerPrefix, $item->{$mapAttribute}, $item):$this->innerPrefix;
-		$postfix = (is_callable($this->innerPostfix))?call_user_func($this->innerPostfix, $item->{$mapAttribute}, $item):$this->innerPostfix;
+		if (null === $this->_keyValue) {
+			$this->_rawResultContents[] = $itemValue;
+		} else {
+			$this->_rawResultContents[$this->_keyValue] = $itemValue;
+		}
+		$prefix = (is_callable($this->innerPrefix))?call_user_func($this->innerPrefix, $this->_keyValue, $item):$this->innerPrefix;
+		$postfix = (is_callable($this->innerPostfix))?call_user_func($this->innerPostfix, $this->_keyValue, $item):$this->innerPostfix;
 
 		return $prefix.$itemValue.$postfix;
-	}
-
-	/**
-	 * Возвращает набор параметров для конкретного элемента.
-	 * @param Model $item
-	 * @param string $mapAttribute
-	 * @param array|callable $options
-	 * @return array
-	 * @throws Throwable
-	 */
-	private static function PrepareItemOption(Model $item, string $mapAttribute, $options):array {
-		return (is_callable($options))?$options($item->{$mapAttribute}, $item):$options;
 	}
 
 	/**
@@ -307,7 +301,8 @@ class BadgeWidget extends CachedWidget {
 			return '';
 		}
 		$item = $this->prepareItem(-1, $addonText);
-		$addonOptions = self::PrepareItemOption($item, 'id', $this->addonOptions??$this->options);
+		$addonOptions = $this->addonOptions??$this->options;
+		$addonOptions = is_callable($addonOptions)?$addonOptions($this->_keyValue, $item):$addonOptions;
 		$addonOptions = $this->addTooltipToOptions($addonOptions, $this->prepareAddonTooltipText());
 		Html::addCssClass($addonOptions, self::ADDON_BADGE_CLASS);
 		return Html::tag(self::BADGE_TAG, $addonText, $addonOptions);
@@ -316,15 +311,15 @@ class BadgeWidget extends CachedWidget {
 	/**
 	 * Вычисляет атрибут сопоставления
 	 * @param Model $item
-	 * @return string
+	 * @return null|string
 	 */
-	private function prepareKeyAttribute(Model $item):string {
+	private function prepareKeyAttribute(Model $item):?string {
 		if (null === $this->keyAttribute) {
 			/*assume ActiveRecord*/
 			if ($item->hasProperty('primaryKey')) return 'primaryKey';
 			/*assume generated DynamicModel*/
 			if ($item->hasProperty('id')) return 'id'; /*todo: запоминать преобразование в PrepareItem для ускорения проверки*/
-			throw new InvalidConfigException('"keyAttribute" parameter required.');
+//			throw new InvalidConfigException('"keyAttribute" parameter required.');
 		}
 		return $this->keyAttribute;
 	}
@@ -350,17 +345,16 @@ class BadgeWidget extends CachedWidget {
 
 	/**
 	 * @param Model $item
-	 * @param string $mapAttribute
 	 * @return string|null
 	 * @throws Throwable
 	 */
-	private function prepareTooltipText(Model $item, string $mapAttribute):?string {
+	private function prepareTooltipText(Model $item):?string {
 		if (false === $this->tooltip) return null;
 		$tooltip = $this->tooltip;
 		if (is_callable($tooltip)) {
-			$tooltip = $tooltip($item->{$mapAttribute}, $item);
+			$tooltip = $tooltip($this->_keyValue, $item);
 		} elseif (is_array($tooltip)) {
-			$tooltip = ArrayHelper::getValue($tooltip, $item->{$mapAttribute});
+			$tooltip = ArrayHelper::getValue($tooltip, $this->_keyValue);
 		}
 		return $tooltip;
 	}
@@ -420,20 +414,22 @@ class BadgeWidget extends CachedWidget {
 			if (null === $item) continue;
 
 			$item = $this->prepareItem($index, $item);
-			$mapAttribute = $this->prepareKeyAttribute($item);
-			$itemValue = $this->prepareValue($item, $mapAttribute);
+			$this->_keyAttribute = $this->prepareKeyAttribute($item);
+			$this->_keyValue = null === $this->_keyAttribute?null:$item->{$this->_keyAttribute};
+			$itemValue = $this->prepareValue($item);
 
 			if ($this->iconize) $itemValue = Utils::ShortifyString($itemValue);
 			/*Добавление ссылки к элементу*/
 			$itemValue = $this->prepareUrl($item, $itemValue);
-			$itemOptions = self::PrepareItemOption($item, $mapAttribute, $this->options);
-			$itemOptions = $this->addTooltipToOptions($itemOptions, $this->prepareTooltipText($item, $mapAttribute));
+			$itemOptions = is_callable($this->options)?call_user_func($this->options, $this->_keyValue, $item):$this->options;
+
+			$itemOptions = $this->addTooltipToOptions($itemOptions, $this->prepareTooltipText($item));
 			$badges[$item->{$mapAttribute}] = $this->prepareBadge($itemValue, $itemOptions);
 		}
 		/*Из переданных данных не удалось собрать массив, показываем выбранную заглушку*/
 		if ([] === $badges && null !== $this->emptyText) {
 			return self::widget([
-				'items' => $this->emptyText,//todo: проверить, что будет при $emptyText массивом или замыканием
+				'items' => $this->emptyText,
 				'iconize' => $this->iconize,
 				'innerPrefix' => $this->innerPrefix,
 				'innerPostfix' => $this->innerPostfix,
