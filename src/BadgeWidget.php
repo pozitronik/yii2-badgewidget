@@ -47,12 +47,12 @@ use yii\helpers\Html;
  *
  * @property-write string|callable $innerPrefix Строка, добавляемая перед текстом внутри значка.
  * @property-write string|callable $innerPostfix Строка, добавляемая после текста внутри значка.
- * @TODO @property-write string|callable $outerPrefix Строка, добавляемая перед текстом снаружи значка.
- * @TODO @property-write string|callable $outerPostfix Строка, добавляемая перед текстом внутри значка.
+ * @property-write string|callable $outerPrefix Строка, добавляемая перед текстом снаружи значка.
+ * @property-write string|callable $outerPostfix Строка, добавляемая после текста снаружи значка.
  *
  * В случае, если параметр задаётся замыканием, коллбек имеет вид:
  *            function(
- *                mixed $mapAttributeValue, <== значение элемента по ключевому атрибуту,
+ *                mixed $keyAttributeValue, <== значение элемента по ключевому атрибуту,
  *                Model $item <== текущий элемент
  *            ):string <== добавляемое значение
  *
@@ -163,6 +163,9 @@ class BadgeWidget extends CachedWidget {
 	/* Вычисленные параметры сопоставлений на каждую итерацию */
 	private $_keyAttribute;
 	private $_keyValue;
+	/* Вычисленные внешние префикс и постфикс для каждого элемента */
+	private $_outerPrefix;
+	private $_outerPostfix;
 
 	/**
 	 * Функция инициализации и нормализации свойств виджета
@@ -224,10 +227,11 @@ class BadgeWidget extends CachedWidget {
 		} else {
 			$this->_rawResultContents[$this->_keyValue] = $itemValue;
 		}
-		$prefix = (is_callable($this->innerPrefix))?call_user_func($this->innerPrefix, $this->_keyValue, $item):$this->innerPrefix;
-		$postfix = (is_callable($this->innerPostfix))?call_user_func($this->innerPostfix, $this->_keyValue, $item):$this->innerPostfix;
-
-		return $prefix.$itemValue.$postfix;
+		$innerPrefix = (is_callable($this->innerPrefix))?call_user_func($this->innerPrefix, $this->_keyValue, $item):$this->innerPrefix;
+		$innerPostfix = (is_callable($this->innerPostfix))?call_user_func($this->innerPostfix, $this->_keyValue, $item):$this->innerPostfix;
+		$this->_outerPrefix = (is_callable($this->outerPrefix))?call_user_func($this->outerPrefix, $this->_keyValue, $item):$this->outerPrefix;
+		$this->_outerPostfix = (is_callable($this->outerPostfix))?call_user_func($this->outerPostfix, $this->_keyValue, $item):$this->outerPostfix;
+		return $innerPrefix.$itemValue.$innerPostfix;
 	}
 
 	/**
@@ -239,7 +243,7 @@ class BadgeWidget extends CachedWidget {
 	private function prepareBadge(string $text, array $elementOptions):string {
 		if ($this->useBadges) {
 			Html::addCssClass($elementOptions, self::BADGE_CLASS);
-			return Html::tag(self::BADGE_TAG, $text, $elementOptions);
+			return $this->_outerPrefix.Html::tag(self::BADGE_TAG, $text, $elementOptions).$this->_outerPostfix;
 		}
 		return $text;
 	}
