@@ -20,21 +20,40 @@ use yii\helpers\Html;
  * @property-write string|null $itemsSeparator Строка-разделитель между элементами. null - не использовать разделитель.
  * @property-write string|null $emptyText Текст иконки, подставляемой при отсутствии обрабатываемых данных. null - не подставлять текст.
  * @property-write bool $iconize Содержимое бейджа сокращается до псевдоиконки.
+ * @property-write null|string $keyAttribute Атрибут, значение которого будет использоваться как ключевое, при сопоставлении элементов с массивами параметров и при передаче данных в коллбеки.
+ * Если параметр не задан, виджет попытается вычислить его самостоятельно для каждого элемента, в зависимости от его типа:
+ * todo           массивы: ключ значения. Элементы массивов приводятся к виду Model(['id' => $key, 'value' => $value]), т.е. $mapAttribute будет установлен, как id.
+ *            ActiveRecord: ключевой атрибут,
+ *            объекты с атрибутом id: id,
+ *            иные объекты: todo
  *
  * @property-write string|callable $innerPrefix Строка, добавляемая перед текстом внутри значка. Если задано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
  * @property-write string|callable $innerPostfix Строка, добавляемая после текста внутри значка. Если задано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
  * @TODO @property-write string|callable $outerPrefix Строка, добавляемая перед текстом снаружи значка. Если задано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
  * @TODO @property-write string|callable $outerPostfix Строка, добавляемая перед текстом внутри значка. Если задано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
  *
- * @property-write null|string $mapAttribute Атрибут, значение которого будет использоваться как ключевое при сопоставлении элементов с массивами параметров. Если не задан, виджет попытается вычислить его самостоятельно, взяв ключевой атрибут для ActiveRecord или ключ для элемента массива.
+ * В случае, если параметр задаётся замыканием, коллбек имеет вид:
+ *            function(
+ *                mixed $mapAttributeValue, <== значение элемента по ключевому атрибуту,
+ *                Model $item <== текущий элемент
+ *            ):string <== добавляемое значение
  *
  * @property-write bool|int|callable $visible Параметр, определяющий, какие элементы будут отображены.
  *        true - будут отображены все элементы,
  *        false - будут скрыты все элементы (предполагается взаимодействие через $addon)
  *        int - будет отображено указанное число первых элементов,
- *        callable - будет вызвана функция, в которой параметром будет передан ключ элемента (если есть). Логический результат выполнения этой функции определяет отображение элемента.
+ *        callable - коллбек вида
+ *            function(
+ *                mixed $mapAttributeValue, <== значение элемента по ключевому атрибуту,
+ *                Model $item <== текущий элемент
+ *            ):bool <== true для отображения элемента
  *
- * @property-write array|callable $options HTML-опции для каждого значка по умолчанию. Если задано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть массив опций для этого элемента.
+ * @property-write array|callable $options HTML-опции для каждого значка по умолчанию. В случае, если параметр задаётся замыканием, коллбек имеет вид:
+ *            function(
+ *                mixed $mapAttributeValue, <== значение элемента по ключевому атрибуту,
+ *                Model $item <== текущий элемент
+ *            ):array <== массив HTML-опций для значка элемента
+ *
  * @property-write array|false $urlScheme Схема подстановки значений атрибутов элемента в генерируемую ссылку, например:
  *        $item = {"key" => 1, "value" => 100, "property" => "propertyData", "arrayParameter" => ["a" => 10, "b" => 20, "c" => 30]]}
  *        UrlOptions->scheme = ['site/index', 'id' => 'value', 'param1' => 'property', 'param2' => 'non-property', 'param3' => 'arrayParameter']
@@ -46,7 +65,12 @@ use yii\helpers\Html;
  *        false - всплывающая подсказка не используется,
  *        string - одна подсказка на все элементы,
  *        string[] - массив подсказок, сопоставляемый с элементами по ключу,
- *        callable - будет вызвана функция, получающая на вход ключ элемента (если есть), которая должна вернуть строку с текстом подсказки.
+ *        callable - коллбек вида
+ *            function(
+ *                mixed $mapAttributeValue, <== значение элемента по ключевому атрибуту,
+ *                Model $item <== текущий элемент
+ *            ):string <== текст подсказки
+ *
  * @property-write bool $bootstrapTooltip Использование подсказок bootstrap, если false - то будут использованы нативные браузерные подсказки.
  * @property-write string $tooltipPlacement Позиция появления всплывающей подсказки, см. TP_*-константы. Применяется также и для всплывающей подсказке на аддоне.
  * @property-write string $tooltipTrigger Триггер появления подсказок, см. TT_*-константы. Применяется также и для всплывающей подсказке на аддоне.
@@ -55,8 +79,13 @@ use yii\helpers\Html;
  *        false - не будет показан ни в каких случаях,
  *        true - будет показан сгенерированный элемент, отображающий информацию о скрытых значках (при их наличии),
  *        string - будет отображена заданная строка,
- *        callable - будет вызвана функция, получающая на вход первым параметром количество видимых элементов, вторым параметром количество скрытых элементов, которая должна вернуть строку с содержимым.
- * @property array|callable|null $addonOptions HTML-опции аддона. Если null - копируется из $options
+ *        callable - коллбек вида
+ *            function(
+ *                int $visibleBadgesCount, <== количество отображаемых значков,
+ *                int $hiddenBadgesCount <== количество скрытых значков
+ *            ):string <== текст значка
+ *
+ * @property array|callable|null $addonOptions HTML-опции аддона. Формат совпадает с $options. Если null - копируется значение из $options.
  * @property callable|false|string $addonTooltip Настройки всплывающей подсказки на аддоне.
  *        false - всплывающая подсказка не используется,
  *        string - текстовая подсказка,
@@ -64,12 +93,9 @@ use yii\helpers\Html;
  *            function(
  *                string[] $allItems, <== содержимое всех значков (без форматирования)
  *                string[] $visibleElements, <== содержимое видимых значков (без форматирования)
- *                string[] $hiddenRawContents, <== содержимое скрытых значков (без форматирования)
- *            ):string[]
+ *                string[] $hiddenRawContents <== содержимое скрытых значков (без форматирования)
+ *            ):string <== текст подсказки
  *
- * todo:
- * 1) в коллбеки передавать и текущий элемент, вместе с ключом
- * 2) в коллбек
  */
 class BadgeWidget extends CachedWidget {
 	/*Константы позиционирования подсказки*/
@@ -97,7 +123,7 @@ class BadgeWidget extends CachedWidget {
 	public $innerPostfix = '';
 	public $outerPrefix = '';
 	public $outerPostfix = '';
-	public $mapAttribute;
+	public $keyAttribute;
 	public $visible = 3;
 	public $addon = true;
 
@@ -174,8 +200,8 @@ class BadgeWidget extends CachedWidget {
 	private function prepareValue(Model $item, string $mapAttribute):string {
 		$itemValue = ArrayHelper::getValue($item, $this->subItem);/*Текстовое значение значка*/
 		$this->_rawResultContents[$item->{$mapAttribute}] = $itemValue;
-		$prefix = (is_callable($this->innerPrefix))?call_user_func($this->innerPrefix, $item->{$mapAttribute}):$this->innerPrefix;
-		$postfix = (is_callable($this->innerPostfix))?call_user_func($this->innerPostfix, $item->{$mapAttribute}):$this->innerPostfix;
+		$prefix = (is_callable($this->innerPrefix))?call_user_func($this->innerPrefix, $item->{$mapAttribute}, $item):$this->innerPrefix;
+		$postfix = (is_callable($this->innerPostfix))?call_user_func($this->innerPostfix, $item->{$mapAttribute}, $item):$this->innerPostfix;
 
 		return $prefix.$itemValue.$postfix;
 	}
@@ -189,7 +215,7 @@ class BadgeWidget extends CachedWidget {
 	 * @throws Throwable
 	 */
 	private static function PrepareItemOption(Model $item, string $mapAttribute, $options):array {
-		return (is_callable($options))?$options($item->{$mapAttribute}):$options;
+		return (is_callable($options))?$options($item->{$mapAttribute}, $item):$options;
 	}
 
 	/**
@@ -231,7 +257,7 @@ class BadgeWidget extends CachedWidget {
 		if (is_callable($this->visible)) {
 			$visibleArray = [];
 			foreach ($visibleBadges as $itemKey => $itemValue) {
-				if (true === call_user_func($this->visible, $itemKey)) {
+				if (true === call_user_func($this->visible, $itemKey, $itemValue)) {
 					$visibleArray[$itemKey] = $itemValue;
 				} else {
 					$hiddenBadges[$itemKey] = $itemValue;
@@ -275,8 +301,8 @@ class BadgeWidget extends CachedWidget {
 	 * @param Model $item
 	 * @return string
 	 */
-	private function prepareMapAttribute(Model $item):string {
-		if (null === $this->mapAttribute) {
+	private function prepareKeyAttribute(Model $item):string {
+		if (null === $this->keyAttribute) {
 			if ($item->hasProperty('primaryKey')) {/*assume ActiveRecord*/
 				return 'primaryKey';
 			}
@@ -284,7 +310,7 @@ class BadgeWidget extends CachedWidget {
 				return 'id'; /*todo: запоминать преобразование в PrepareItem для ускорения проверки*/
 			}
 		}
-		return $this->mapAttribute;
+		return $this->keyAttribute;
 	}
 
 	/**
@@ -316,7 +342,7 @@ class BadgeWidget extends CachedWidget {
 		if (false === $this->tooltip) return null;
 		$tooltip = $this->tooltip;
 		if (is_callable($tooltip)) {
-			$tooltip = $tooltip($item->{$mapAttribute});
+			$tooltip = $tooltip($item->{$mapAttribute}, $item);
 		} elseif (is_array($tooltip)) {
 			$tooltip = ArrayHelper::getValue($tooltip, $item->{$mapAttribute});
 		}
@@ -325,6 +351,7 @@ class BadgeWidget extends CachedWidget {
 
 	/**
 	 * @return string|null
+	 * @throws InvalidConfigException
 	 */
 	private function prepareAddonTooltipText():?string {
 		if (false === $this->addonTooltip) return null;
@@ -377,7 +404,7 @@ class BadgeWidget extends CachedWidget {
 			if (null === $item) continue;
 
 			$item = $this->prepareItem($index, $item);
-			$mapAttribute = $this->prepareMapAttribute($item);
+			$mapAttribute = $this->prepareKeyAttribute($item);
 			$itemValue = $this->prepareValue($item, $mapAttribute);
 
 			if ($this->iconize) $itemValue = Utils::ShortifyString($itemValue);
