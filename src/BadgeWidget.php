@@ -136,7 +136,7 @@ class BadgeWidget extends CachedWidget {
 	/* Классы значков (всегда добавляются, независимо от пользовательских классов) */
 	private const BADGE_CLASS = ['class' => 'badge'];
 	private const ADDON_BADGE_CLASS = ['class' => 'badge addon-badge'];
-	private const HIDDEN_CLASS = ['class' => 'hidden'];
+	private const HIDDEN_CLASS = ['class' => 'hidden-badges'];
 
 	public $subItem;
 	public $useBadges = true;
