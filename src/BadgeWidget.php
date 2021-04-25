@@ -5,7 +5,6 @@ namespace pozitronik\widgets;
 
 use pozitronik\helpers\Utils;
 use pozitronik\helpers\ArrayHelper;
-use pozitronik\helpers\ReflectionHelper;
 use Throwable;
 use yii\base\DynamicModel;
 use yii\base\InvalidConfigException;
@@ -14,18 +13,37 @@ use yii\helpers\Html;
 
 /**
  * Class BadgeWidget
- * @property-write string|array|object|callable $items Данные для обработки (строка, массив, модель, замыкание). Преобразуются в массив при обработке.
- * @property-write string $subItem Отображаемый ключ (строка => null, массив => key, модель => атрибут/свойство/переменная, замыкание => параметр). Виджет пытается просчитать его автоматически.
- * @property-write bool $useBadges Включает/отключает генерацию значков.
- * @property-write string|null $itemsSeparator Строка-разделитель между элементами. null - не использовать разделитель.
- * @property-write string|null $emptyText Текст иконки, подставляемой при отсутствии обрабатываемых данных. null - не подставлять текст.
- * @property-write bool $iconize Содержимое бейджа сокращается до псевдоиконки.
+ * @property-write string|string[]|object|object[]|callable $items Данные для генерации значков. todo: проверить object
+ *        string - будет отображён один значок, содержащий эту строку,
+ *        string[] - будут отображены значки для каждого значения массива,
+ *        object - будет отображён значок с содержимым атрибута, указанного в $subItem,
+ *        object[] - будут отображены значки для каждого атрибута объекта, указанного в $subItem,
+ *        callable - будет вызван коллбек вида:
+ *            function(
+ *                string $subItem <== параметр BadgeWidget::$subItem,
+ *            ):string|string[] <== данные для отображения, обрабатываемые согласно вышеуказанному,
+ *        callable[] - для каждого значения будет вызван коллбек вида:
+ *            function(
+ *                int|string $key <== ключ/индекс значения,
+ *            ):object|string[] <== данные для отображения, обрабатываемые согласно вышеуказанному.
+ *
+ * Если параметр задан массивом, то он может содержать значения любых поддерживаемых типов.
+ * Пустые значения (null) пропускаются при обработке.
+ *
+ * @property-write string $subItem Ключ, используемый для сопоставления отображаемых данных. Игнорируется, если $items задан как строка. Для ассоциативных и индексированных массивов вычисляется автоматически, как ключ/индекс.
+ * Для объектов должен указывать на свойство, атрибут или переменную, в замыкания передаётся, как параметр.
+ *
  * @property-write null|string $keyAttribute Атрибут, значение которого будет использоваться как ключевое, при сопоставлении элементов с массивами параметров и при передаче данных в коллбеки.
  * Если параметр не задан, виджет попытается вычислить его самостоятельно для каждого элемента, в зависимости от его типа:
  *            массивы: ключ значения. Элементы массивов приводятся к виду Model(['id' => $key, 'value' => $value]), т.е. $mapAttribute будет установлен, как id.
  *            ActiveRecord: ключевой атрибут,
- *            объекты с атрибутом id: id,
- *            иные объекты: todo
+ *            объекты с атрибутом id: id.
+ * todo: Если вычислить ключевой атрибут невозможно, то не будут работать все сопоставления и коллбеки, опирающиеся на него.
+ *
+ * @property-write bool $useBadges Включает/отключает генерацию значков.
+ * @property-write string|null $itemsSeparator Строка-разделитель между элементами. null - не использовать разделитель.
+ * @property-write string|string[]|null $emptyText Текст иконки, подставляемой при отсутствии обрабатываемых данных. null - не подставлять текст.
+ * @property-write bool $iconize Содержимое бейджа сокращается до псевдоиконки.
  *
  * @property-write string|callable $innerPrefix Строка, добавляемая перед текстом внутри значка. Если задано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
  * @property-write string|callable $innerPostfix Строка, добавляемая после текста внутри значка. Если задано замыканием, то функция получает на вход ключ элемента (если есть), и должна вернуть строку для этого элемента.
@@ -166,22 +184,22 @@ class BadgeWidget extends CachedWidget {
 	 */
 	public function setItems($items):void {
 		$this->_items = $items;
-		if (ReflectionHelper::is_closure($this->_items)) $this->_items = call_user_func($this->_items);
+		if (is_callable($this->_items)) $this->_items = call_user_func($this->_items, $this->subItem);
 		if (!is_array($this->_items)) $this->_items = [$this->_items];
-
 	}
 
 	/**
 	 * Преобразует каждый перечисляемый объект в модель для внутреннего использования
 	 * @param mixed $index
-	 * @param $item
+	 * @param mixed $item
 	 * @return Model
 	 * @throws InvalidConfigException
 	 */
 	private function prepareItem($index, $item):Model {
+		if (is_callable($item)) $item = call_user_func($item, $index);
 		if (!is_object($item)) {
 			if (!is_scalar($item)) {
-				throw new InvalidConfigException("Non-scalar values is unsupported");
+				throw new InvalidConfigException("Non-scalar values is unsupported.");
 			}
 			return new DynamicModel([
 				'id' => $index,
@@ -268,7 +286,7 @@ class BadgeWidget extends CachedWidget {
 			return;
 
 		}
-		throw new InvalidConfigException('Wrong type for "visible" parameter');
+		throw new InvalidConfigException('Wrong type for "visible" parameter.');
 	}
 
 	/**
@@ -286,7 +304,7 @@ class BadgeWidget extends CachedWidget {
 		} elseif (is_callable($this->addon)) {
 			$addonText = call_user_func($this->addon, $visibleElementsCount, $hiddenElementsCount);
 		} elseif (false !== $this->addon) {
-			throw new InvalidConfigException('Wrong type for "addon" parameter');
+			throw new InvalidConfigException('Wrong type for "addon" parameter.');
 		} else {
 			return '';
 		}
@@ -304,12 +322,11 @@ class BadgeWidget extends CachedWidget {
 	 */
 	private function prepareKeyAttribute(Model $item):string {
 		if (null === $this->keyAttribute) {
-			if ($item->hasProperty('primaryKey')) {/*assume ActiveRecord*/
-				return 'primaryKey';
-			}
-			if ($item->hasProperty('id')) {/*assume generated DynamicModel*/
-				return 'id'; /*todo: запоминать преобразование в PrepareItem для ускорения проверки*/
-			}
+			/*assume ActiveRecord*/
+			if ($item->hasProperty('primaryKey')) return 'primaryKey';
+			/*assume generated DynamicModel*/
+			if ($item->hasProperty('id')) return 'id'; /*todo: запоминать преобразование в PrepareItem для ускорения проверки*/
+			throw new InvalidConfigException('"keyAttribute" parameter required.');
 		}
 		return $this->keyAttribute;
 	}
