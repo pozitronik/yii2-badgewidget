@@ -36,7 +36,7 @@ use yii\helpers\Html;
  *            массивы: ключ значения. Элементы массивов приводятся к виду Model(['id' => $key, 'value' => $value]), т.е. $mapAttribute будет установлен, как id.
  *            ActiveRecord: ключевой атрибут,
  *            объекты с атрибутом id: id.
- * todo: Если вычислить ключевой атрибут невозможно, то не будут работать все сопоставления и коллбеки, опирающиеся на него.
+ * Если вычислить ключевой атрибут невозможно, то не будут работать все сопоставления и коллбеки, опирающиеся на него.
  *
  * @property-write bool $useBadges Включает/отключает генерацию значков.
  * @property-write string|null $itemsSeparator Строка-разделитель между элементами. null - не использовать разделитель.
@@ -202,8 +202,9 @@ class BadgeWidget extends CachedWidget {
 		if (is_callable($item)) $item = $item($index);
 		if (!is_object($item)) {
 			if (!is_scalar($item)) throw new InvalidConfigException("Non-scalar values is unsupported.");
+			if (null === $this->keyAttribute) $this->keyAttribute = 'id';/*Избегаем перевычисления в prepareKeyAttribute()*/
 			return new DynamicModel([
-				'id' => $index,
+				$this->keyAttribute => $index,
 				$this->subItem => $item
 			]);
 		}
@@ -318,7 +319,7 @@ class BadgeWidget extends CachedWidget {
 			/*assume ActiveRecord*/
 			if ($item->hasProperty('primaryKey')) return 'primaryKey';
 			/*assume generated DynamicModel*/
-			if ($item->hasProperty('id')) return 'id'; /*todo: запоминать преобразование в PrepareItem для ускорения проверки*/
+			if ($item->hasProperty('id')) return 'id';
 //			throw new InvalidConfigException('"keyAttribute" parameter required.');
 		}
 		return $this->keyAttribute;
@@ -416,7 +417,7 @@ class BadgeWidget extends CachedWidget {
 			$item = $this->prepareItem($index, $item);
 			$this->_keyAttribute = $this->prepareKeyAttribute($item);
 			$this->_keyValue = null === $this->_keyAttribute?null:$item->{$this->_keyAttribute};
-			$itemValue = $this->prepareValue($item);
+			if (null === $itemValue = $this->prepareValue($item)) continue;/*Пропускаем необнаруженные значения*/
 
 			if ($this->iconize) $itemValue = Utils::ShortifyString($itemValue);
 			/*Добавление ссылки к элементу*/
@@ -424,7 +425,12 @@ class BadgeWidget extends CachedWidget {
 			$itemOptions = is_callable($this->options)?call_user_func($this->options, $this->_keyValue, $item):$this->options;
 
 			$itemOptions = $this->addTooltipToOptions($itemOptions, $this->prepareTooltipText($item));
-			$badges[$item->{$mapAttribute}] = $this->prepareBadge($itemValue, $itemOptions);
+			if (null === $this->_keyValue) {
+				$badges[] = $this->prepareBadge($itemValue, $itemOptions);
+			} else {
+				/*Элементы МОГУТ перезаписываться*/
+				$badges[$this->_keyValue] = $this->prepareBadge($itemValue, $itemOptions);
+			}
 		}
 		/*Из переданных данных не удалось собрать массив, показываем выбранную заглушку*/
 		if ([] === $badges && null !== $this->emptyText) {
