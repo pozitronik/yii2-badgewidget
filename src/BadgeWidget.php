@@ -22,7 +22,7 @@ use yii\helpers\Html;
  * @property-write bool $iconize Содержимое бейджа сокращается до псевдоиконки.
  * @property-write null|string $keyAttribute Атрибут, значение которого будет использоваться как ключевое, при сопоставлении элементов с массивами параметров и при передаче данных в коллбеки.
  * Если параметр не задан, виджет попытается вычислить его самостоятельно для каждого элемента, в зависимости от его типа:
- * todo           массивы: ключ значения. Элементы массивов приводятся к виду Model(['id' => $key, 'value' => $value]), т.е. $mapAttribute будет установлен, как id.
+ *            массивы: ключ значения. Элементы массивов приводятся к виду Model(['id' => $key, 'value' => $value]), т.е. $mapAttribute будет установлен, как id.
  *            ActiveRecord: ключевой атрибут,
  *            объекты с атрибутом id: id,
  *            иные объекты: todo
@@ -173,14 +173,15 @@ class BadgeWidget extends CachedWidget {
 
 	/**
 	 * Преобразует каждый перечисляемый объект в модель для внутреннего использования
-	 * @param null|int $index
+	 * @param mixed $index
 	 * @param $item
 	 * @return Model
+	 * @throws InvalidConfigException
 	 */
-	private function prepareItem(?int $index, $item):Model {
+	private function prepareItem($index, $item):Model {
 		if (!is_object($item)) {
-			if (is_array($item)) {
-				return new DynamicModel($item);
+			if (!is_scalar($item)) {
+				throw new InvalidConfigException("Non-scalar values is unsupported");
 			}
 			return new DynamicModel([
 				'id' => $index,
