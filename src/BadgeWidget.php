@@ -16,13 +16,13 @@ use yii\helpers\Html;
  * Class BadgeWidget
  * @property string|array|object|callable $models
  * @property string $attribute
- * @property boolean $useBadges
+ * @property bool $useBadges
  * @property string|false $allBadgeClass
  * @property string $linkAttribute
  * @property array|false $linkScheme
  * @property string $itemsSeparator
  * @property string $moreBadgeTooltipSeparator
- * @property integer|false $unbadgedCount
+ * @property int|false $unbadgedCount
  * @property array|callable $optionsMap
  * @property null|string $optionsMapAttribute
  * @property array $badgeOptions
@@ -50,11 +50,11 @@ class BadgeWidget extends CachedWidget {
 	public $linkAttribute = 'id';//Атрибут, подставляемый в ссылку по схеме в $linkScheme. Строка, или массив строк (в этом случае подстановка идёт по порядку).
 	public $linkScheme = false;//Url-схема, например ['/groups/groups/profile', 'id' => 'id'] (Значение id будет взято из аттрибута id текущей модели), если false - то не используем ссылки
 	public $itemsSeparator = ', ';//Разделитель объектов
-	public $optionsMap = []; //Массив HTML-опций для каждого бейджа ([optionsMapAttributeValue => options])". Если установлен, мержится с $badgeOptions
+	public $optionsMap = []; //Массив HTML-опций для каждого бейджа ([optionsMapAttributeValue => options])". Если установлен, сливается с $badgeOptions
 	public $optionsMapAttribute; //Имя аттрибута, используемого для подбора значения в $optionsMap, если null, то используется primaryKey (или id, если модель не имеет первичного ключа)
 	public $badgeOptions = ['class' => 'badge'];//дефолтная опция для бейджа
 	public $moreBadgeOptions = ['class' => 'badge pull-right'];//Массив HTML-опций для бейджа "ещё".
-	public $moreBadgeUseTooltip = true;//включает вывод скрытых данных во всплыващей подсказке бейджа "ещё"
+	public $moreBadgeUseTooltip = true;//включает вывод скрытых данных во всплывающей подсказке бейджа "ещё"
 	public $moreBadgeTooltipSeparator = ', ';//Разделитель текста всплывающих подсказок за значком "ещё"
 	public $prefix = '';//строчка, добавляемая перед всеми бейджами, может задаваться замыканием
 	public $badgePrefix = '';//строчка, добавляемая перед содержимым каждого, может задаваться замыканием, принимает параметром текущую модель
@@ -125,7 +125,7 @@ class BadgeWidget extends CachedWidget {
 						foreach ($value as $index => $item) {
 							$arrayedParameters["{$key}[{$index}]"] = $item;
 						}
-					} else if ($model->hasProperty($value) && false !== $attributeValue = ArrayHelper::getValue($model, $value, false)) $value = $attributeValue;
+					} elseif ($model->hasProperty($value) && false !== $attributeValue = ArrayHelper::getValue($model, $value, false)) $value = $attributeValue;
 
 				});
 				if ([] !== $arrayedParameters) $currentLinkScheme = array_merge(...$arrayedParameters);//если в схеме были переданы значения массивом, включаем их разбор в схему
@@ -142,7 +142,7 @@ class BadgeWidget extends CachedWidget {
 					$currentBadgeHtmlOptions = ArrayHelper::mergeImplode(' ', $currentBadgeHtmlOptions, [
 						'class' => 'add-tooltip badge',
 						'data-toggle' => 'tooltip',
-						'data-original-title' => (ReflectionHelper::is_closure($this->tooltip))?call_user_func($this->tooltip, $model):$tooltip = $this->tooltip,
+						'data-original-title' => (ReflectionHelper::is_closure($this->tooltip))?call_user_func($this->tooltip, $model):$this->tooltip,
 						'data-placement' => $this->tooltipPlacement
 					]);
 				}
