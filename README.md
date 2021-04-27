@@ -25,8 +25,8 @@ Requirements
 ------------
 
 Yii2,
-PHP >= 7.2.0
+PHP >= 7.4.0
 
 Usage
 -----
-Sorry, not documented yet (but you can rely to PHPDoc).
+Sorry, not documented yet (but you can rely on PHPDoc).
