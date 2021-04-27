@@ -9,3 +9,7 @@
 .badge.inline-block {
 	display: inline-block;
 }
+
+.hidden-badges {
+	display: none;
+}
