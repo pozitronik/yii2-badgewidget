@@ -5,7 +5,7 @@ function EnableExpandAddon(widgetId) {
 	let addon = $("#badge-widget-" + widgetId + "-addon"),
 		hiddenBlock = $("#badge-widget-" + widgetId + "-hidden");
 	addon.on("click", function(e) {
-		hiddenBlock.show();
-		addon.hide();
+		addon.replaceWith(hiddenBlock.html());
+		hiddenBlock.remove();
 	})
 }
