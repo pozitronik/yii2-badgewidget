@@ -207,11 +207,15 @@ class BadgeWidget extends CachedWidget {
 	 * @param mixed $item
 	 * @return Model
 	 * @throws InvalidConfigException
+	 * @throws Throwable
 	 */
 	private function prepareItem($index, $item):Model {
 		if (is_callable($item)) $item = $item($index);
 		if (!is_object($item)) {
-			if (!is_scalar($item)) throw new InvalidConfigException("Non-scalar values is unsupported.");
+			/* Возможно, это массив с нужными данными */
+			if (!is_scalar($item) && null === $item = ArrayHelper::getValue($item, $this->subItem)) {
+				throw new InvalidConfigException("Non-scalar values is unsupported.");
+			}
 			if (null === $this->keyAttribute) $this->keyAttribute = 'id';/*Избегаем перевычисления в prepareKeyAttribute()*/
 			return new DynamicModel([
 				$this->keyAttribute => $index,
@@ -220,6 +224,7 @@ class BadgeWidget extends CachedWidget {
 		}
 		return $item;
 	}
+
 
 	/**
 	 * Вытаскивает из подготовленной модели значение для отображения
