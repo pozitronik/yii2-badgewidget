@@ -22,7 +22,6 @@
 		"pozitronik/yii2-cachedwidget": "dev-master"
 	},
 	"require-dev": {
-		"yidas/yii2-composer-bower-skip": "dev-master",
 		"yiisoft/yii2": "dev-master"
 	},
 	"autoload": {
@@ -35,5 +34,11 @@
 		"fxp-asset": {
 			"enabled": false
 		}
-	}
+	},
+	"repositories": [
+		{
+			"type": "composer",
+			"url": "https://asset-packagist.org"
+		}
+	]
 }
