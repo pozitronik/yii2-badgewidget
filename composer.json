@@ -15,7 +15,7 @@
 			"email": "antikillerxxl@gmail.com"
 		}
 	],
-	"minimum-stability": "dev",
+	"minimum-stability": "stable",
 	"require": {
 		"pozitronik/yii2-helpers": "dev-master",
 		"pozitronik/yii2-cachedwidget": "dev-master"
