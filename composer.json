@@ -17,8 +17,8 @@
 	],
 	"minimum-stability": "stable",
 	"require": {
-		"pozitronik/yii2-helpers": "dev-master",
-		"pozitronik/yii2-cachedwidget": "dev-master"
+		"pozitronik/yii2-helpers": "1.*",
+		"pozitronik/yii2-cachedwidget": "1.*"
 	},
 	"require-dev": {
 		"yidas/yii2-composer-bower-skip": "dev-master",
