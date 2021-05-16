@@ -72,11 +72,12 @@ use yii\helpers\Html;
  *            Model $item <== текущий элемент
  *        ):array <== массив HTML-опций для значка элемента
  *
- * @property-write array|false $urlScheme Схема подстановки значений атрибутов элемента в генерируемую ссылку, например:
+ * @property-write array|string|false $urlScheme Схема подстановки значений атрибутов элемента в генерируемую ссылку, например:
  *        $item = {"key" => 1, "value" => 100, "property" => "propertyData", "arrayParameter" => ["a" => 10, "b" => 20, "c" => 30]]}
  *        UrlOptions->scheme = ['site/index', 'id' => 'value', 'param1' => 'property', 'param2' => 'non-property', 'param3' => 'arrayParameter']
  * Получим набор параметров ссылки для элемента:
  *        ['site/index', 'id' => 100, 'param1' => 'propertyData', 'param2' => 'non-property', 'param3[a]' => 10, 'param3[b]' => 20, 'param3[c]' => 30]
+ * string - строка используется, как ссылка.
  * false - элементы не превращаются в ссылки.
  *
  * @property-write string[]|callable|false|string $tooltip Настройки для всплывающей подсказки.
@@ -224,7 +225,6 @@ class BadgeWidget extends CachedWidget {
 		}
 		return $item;
 	}
-
 
 	/**
 	 * Вытаскивает из подготовленной модели значение для отображения
@@ -400,6 +400,7 @@ class BadgeWidget extends CachedWidget {
 	 */
 	private function prepareUrl(Model $item, string $content):string {
 		if (false === $this->urlScheme) return $content;
+		if (is_string($this->urlScheme)) return Html::a($content, $this->urlScheme);
 		$arrayedParameters = [];
 		$currentLinkScheme = $this->urlScheme;
 		array_walk($currentLinkScheme, static function(&$value, $key) use ($item, &$arrayedParameters) {//подстановка в схему значений из модели
