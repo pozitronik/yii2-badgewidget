@@ -398,7 +398,7 @@ class BadgeWidget extends CachedWidget {
 	 * @return string
 	 * @throws Throwable
 	 */
-	private function prepareUrl(Model $item, string $content):string {
+	protected function prepareUrl(Model $item, string $content):string {
 		if (false === $this->urlScheme) return $content;
 		if (is_string($this->urlScheme)) return Html::a($content, $this->urlScheme);
 		$arrayedParameters = [];
