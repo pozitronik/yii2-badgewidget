@@ -53,7 +53,7 @@ use yii\helpers\Html;
  * В случае, если параметр задаётся замыканием, коллбек имеет вид:
  *        function(
  *            mixed $keyAttributeValue, <== значение элемента по ключевому атрибуту,
- *            Model $item <== текущий элемент
+ *            ?Model $item <== текущий элемент, null если пустой
  *        ):string <== добавляемое значение
  *
  * @property-write bool|int|callable $visible Параметр, определяющий, какие элементы будут отображены.
@@ -362,11 +362,11 @@ class BadgeWidget extends CachedWidget {
 	}
 
 	/**
-	 * @param Model $item
+	 * @param null|Model $item
 	 * @return string|null
 	 * @throws Throwable
 	 */
-	private function prepareTooltipText(Model $item):?string {
+	private function prepareTooltipText(?Model $item = null):?string {
 		if (false === $this->tooltip) return null;
 		$tooltip = $this->tooltip;
 		if (is_callable($tooltip)) {
@@ -461,7 +461,7 @@ class BadgeWidget extends CachedWidget {
 				'outerPostfix' => $this->outerPostfix,
 				'options' => $this->options,
 				'urlScheme' => $this->urlScheme,
-				'tooltip' => $this->tooltip
+				'tooltip' => $this->addTooltipToOptions([], $this->prepareTooltipText())
 			]);
 		}
 		$hiddenBlock = '';
