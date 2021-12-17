@@ -151,6 +151,7 @@ class BadgeWidget extends CachedWidget {
 	public $visible = 3;
 	public $addon = true;
 	public $expandAddon = true;
+	public $isAjax = true; // если у нас ссылка для скачивания в модальке должно быть true, иначе false
 
 	public $urlScheme = false;
 	public $options = self::BADGE_CLASS;
