@@ -197,7 +197,7 @@ class BadgeWidget extends CachedWidget {
 	 */
 	public mixed $addonTooltip = false;
 
-	private array $_items = [];
+	private mixed $_items = [];
 	/* Необработанные значения атрибутов, нужны для вывода подсказки в тултип на элементе аддона */
 	private array $_rawResultContents = [];
 	/* Вычисленные параметры сопоставлений на каждую итерацию */
@@ -226,7 +226,7 @@ class BadgeWidget extends CachedWidget {
 	}
 
 	/**
-	 * @param mixed $items
+	 * @param string|string[]|object|object[]|callable|callable[] $items
 	 */
 	public function setItems(mixed $items):void {
 		$this->_items = $items;
@@ -236,13 +236,13 @@ class BadgeWidget extends CachedWidget {
 
 	/**
 	 * Преобразует каждый перечисляемый объект в модель для внутреннего использования
-	 * @param mixed $index
-	 * @param mixed $item
+	 * @param int|string $index
+	 * @param callable|object|array|int|string $item
 	 * @return Model
 	 * @throws InvalidConfigException
 	 * @throws Throwable
 	 */
-	private function prepareItem(mixed $index, mixed $item):Model {
+	private function prepareItem(int|string $index, mixed $item):Model {
 		if (is_callable($item)) $item = $item($index);
 		if (!is_object($item)) {
 			/* Возможно, это массив с нужными данными */
