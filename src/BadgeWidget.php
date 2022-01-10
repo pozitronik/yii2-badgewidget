@@ -29,7 +29,7 @@ use yii\helpers\Html;
  * Пустые значения (null) пропускаются при обработке.
  *
  * @property-write string $subItem Ключ, используемый для сопоставления отображаемых данных. Игнорируется, если $items задан как строка. Для ассоциативных и индексированных массивов вычисляется автоматически, как ключ/индекс.
- * Для объектов должен указывать на свойство, атрибут или переменную, в замыкания передаётся, как параметр.
+ * Для объектов должен указывать на свойство, атрибут или переменную, в замыкания передаётся как параметр.
  *
  * @property-write null|string $keyAttribute Атрибут, значение которого будет использоваться как ключевое, при сопоставлении элементов с массивами параметров и при передаче данных в коллбеки.
  * Если параметр не задан, виджет попытается вычислить его самостоятельно для каждого элемента, в зависимости от его типа:
@@ -139,41 +139,73 @@ class BadgeWidget extends CachedWidget {
 	private const ADDON_BADGE_CLASS = ['class' => 'badge addon-badge'];
 	private const HIDDEN_CLASS = ['class' => 'hidden-badges'];
 
-	public $subItem;
-	public $useBadges = true;
-	public $itemsSeparator;
-	public $emptyText;
-	public $iconize = false;
-	public $innerPrefix = '';
-	public $innerPostfix = '';
-	public $outerPrefix = '';
-	public $outerPostfix = '';
-	public $keyAttribute;
-	public $visible = 3;
-	public $addon = true;
-	public $expandAddon = true;
+	public string $subItem;
+	public bool $useBadges = true;
+	public null|string $itemsSeparator;
+	/**
+	 * @var string|string[]|null
+	 */
+	public string|array|null $emptyText;
+	public bool $iconize = false;
+	/**
+	 * @var string|callable
+	 */
+	public mixed $innerPrefix = '';
+	/**
+	 * @var string|callable
+	 */
+	public mixed $innerPostfix = '';
+	/**
+	 * @var string|callable
+	 */
+	public mixed $outerPrefix = '';
+	/**
+	 * @var string|callable
+	 */
+	public mixed $outerPostfix = '';
+	public null|string $keyAttribute;
+	/**
+	 * @var bool|int|callable
+	 */
+	public mixed $visible = 3;
+	/**
+	 * @var bool|string|callable
+	 */
+	public mixed $addon = true;
+	public bool $expandAddon = true;
+	/**
+	 * @var array|string|false
+	 */
+	public mixed $urlScheme = false;
+	/**
+	 * @var array|callable
+	 */
+	public mixed $options = self::BADGE_CLASS;
+	/**
+	 * @var array|callable|null
+	 */
+	public mixed $addonOptions = self::ADDON_BADGE_CLASS;
+	/**
+	 * @var string[]|callable|false|string
+	 */
+	public mixed $tooltip = false;
+	public bool $bootstrapTooltip = true;
+	public string $tooltipPlacement = self::TP_TOP;
+	public string $tooltipTrigger = self::TT_HOVER;
+	/**
+	 * @var callable|false|string
+	 */
+	public mixed $addonTooltip = false;
 
-	public $urlScheme = false;
-	public $options = self::BADGE_CLASS;
-
-	public $addonOptions = self::ADDON_BADGE_CLASS;
-	public $tooltip = false;
-	public $bootstrapTooltip = true;
-	public $tooltipPlacement = self::TP_TOP;
-	public $tooltipTrigger = self::TT_HOVER;
-	public $addonTooltip = false;
-
-	/** @var array */
-	private $_items = [];
-
+	private array $_items = [];
 	/* Необработанные значения атрибутов, нужны для вывода подсказки в тултип на элементе аддона */
-	private $_rawResultContents = [];
+	private array $_rawResultContents = [];
 	/* Вычисленные параметры сопоставлений на каждую итерацию */
-	private $_keyAttribute;
-	private $_keyValue;
+	private null|string $_keyAttribute;
+	private null|string $_keyValue;
 	/* Вычисленные внешние префикс и постфикс для каждого элемента */
-	private $_outerPrefix;
-	private $_outerPostfix;
+	private null|string $_outerPrefix;
+	private null|string $_outerPostfix;
 
 	/**
 	 * Функция инициализации и нормализации свойств виджета
