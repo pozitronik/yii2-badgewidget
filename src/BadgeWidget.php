@@ -196,7 +196,7 @@ class BadgeWidget extends CachedWidget {
 	/**
 	 * @param mixed $items
 	 */
-	public function setItems($items):void {
+	public function setItems(mixed $items):void {
 		$this->_items = $items;
 		if (is_callable($this->_items)) $this->_items = call_user_func($this->_items);
 		if (!is_array($this->_items)) $this->_items = [$this->_items];
@@ -210,7 +210,7 @@ class BadgeWidget extends CachedWidget {
 	 * @throws InvalidConfigException
 	 * @throws Throwable
 	 */
-	private function prepareItem($index, $item):Model {
+	private function prepareItem(mixed $index, mixed $item):Model {
 		if (is_callable($item)) $item = $item($index);
 		if (!is_object($item)) {
 			/* Возможно, это массив с нужными данными */
