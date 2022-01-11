@@ -19,7 +19,7 @@
 	"require": {
 		"php": ">=8.0",
 		"pozitronik/yii2-helpers": "dev-dev",
-		"pozitronik/yii2-cachedwidget": "dev-master"
+		"pozitronik/yii2-cachedwidget": "dev-dev"
 	},
 	"require-dev": {
 		"yiisoft/yii2": "dev-master"
