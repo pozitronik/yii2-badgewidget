@@ -201,11 +201,11 @@ class BadgeWidget extends CachedWidget {
 	/* Необработанные значения атрибутов, нужны для вывода подсказки в тултип на элементе аддона */
 	private array $_rawResultContents = [];
 	/* Вычисленные параметры сопоставлений на каждую итерацию */
-	private null|string $_keyAttribute;
-	private null|string $_keyValue;
+	private mixed $_keyAttribute = null;
+	private mixed $_keyValue = null;
 	/* Вычисленные внешние префикс и постфикс для каждого элемента */
-	private null|string $_outerPrefix;
-	private null|string $_outerPostfix;
+	private ?string $_outerPrefix = null;
+	private ?string $_outerPostfix = null;
 
 	/**
 	 * Функция инициализации и нормализации свойств виджета
