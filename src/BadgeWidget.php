@@ -141,11 +141,11 @@ class BadgeWidget extends CachedWidget {
 
 	public string $subItem;
 	public bool $useBadges = true;
-	public null|string $itemsSeparator;
+	public ?string $itemsSeparator = null;
 	/**
 	 * @var string|string[]|null
 	 */
-	public string|array|null $emptyText;
+	public string|array|null $emptyText = null;
 	public bool $iconize = false;
 	/**
 	 * @var string|callable
@@ -163,7 +163,7 @@ class BadgeWidget extends CachedWidget {
 	 * @var string|callable
 	 */
 	public mixed $outerPostfix = '';
-	public null|string $keyAttribute;
+	public ?string $keyAttribute = null;
 	/**
 	 * @var bool|int|callable
 	 */
