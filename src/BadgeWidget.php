@@ -139,7 +139,7 @@ class BadgeWidget extends CachedWidget {
 	private const ADDON_BADGE_CLASS = ['class' => 'badge addon-badge'];
 	private const HIDDEN_CLASS = ['class' => 'hidden-badges'];
 
-	public string $subItem;
+	public ?string $subItem = null;
 	public bool $useBadges = true;
 	public ?string $itemsSeparator = null;
 	/**
