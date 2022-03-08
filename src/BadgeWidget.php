@@ -77,10 +77,10 @@ use yii\helpers\Html;
  *        UrlOptions->scheme = ['site/index', 'id' => 'value', 'param1' => 'property', 'param2' => 'non-property', 'param3' => 'arrayParameter']
  * Получим набор параметров ссылки для элемента:
  *        ['site/index', 'id' => 100, 'param1' => 'propertyData', 'param2' => 'non-property', 'param3[a]' => 10, 'param3[b]' => 20, 'param3[c]' => 30]
- * string - строка используется, как ссылка.
+ * string - строка используется как ссылка.
  * false - элементы не превращаются в ссылки.
  *
- * @property-write string[]|callable|false|string $tooltip Настройки для всплывающей подсказки.
+ * @property-write string[]|callable|false|string $tooltip Настройки текста для всплывающей подсказки.
  *        false - всплывающая подсказка не используется,
  *        string - одна подсказка на все элементы,
  *        string[] - массив подсказок, сопоставляемый с элементами по ключу,
@@ -90,7 +90,17 @@ use yii\helpers\Html;
  *                Model $item <== текущий элемент
  *            ):string <== текст подсказки
  *
- * @property-write bool $bootstrapTooltip Использование подсказок bootstrap, если false - то будут использованы нативные браузерные подсказки.
+ * @property-write string[]|callable|false|string $tooltipTitle Настройки для заголовка всплывающей подсказки (только при $bootstrapTooltip = false).
+ *        false - заголовок не используется,
+ *        string - общий заголовок на все элементы,
+ *        string[] - массив заголовков, сопоставляемый с элементами по ключу,
+ *        callable - коллбек вида
+ *            function(
+ *                mixed $mapAttributeValue, <== значение элемента по ключевому атрибуту,
+ *                Model $item <== текущий элемент
+ *            ):string <== текст заголовка
+ *
+ * @property-write null|bool $bootstrapTooltip Использование подсказок bootstrap: true - tooltip, false - popover, null - нативные браузерные подсказки.
  * @property-write string $tooltipPlacement Позиция появления всплывающей подсказки, см. TP_*-константы. Применяется также и для всплывающей подсказке на аддоне.
  * @property-write string $tooltipTrigger Триггер появления подсказок, см. TT_*-константы. Применяется также и для всплывающей подсказке на аддоне.
  *
@@ -108,7 +118,7 @@ use yii\helpers\Html;
  * @property bool $expandAddon Если аддон есть и отображён, то он может быть использован как кнопка отображения скрытых значков (по щелчку на элементе). false отключает эту функциональность.
  *
  * @property array|callable|null $addonOptions HTML-опции аддона. Формат совпадает с $options. Если null - копируется значение из $options.
- * @property callable|false|string $addonTooltip Настройки всплывающей подсказки на аддоне.
+ * @property callable|false|string $addonTooltip Настройки текста всплывающей подсказки на аддоне.
  *        false - всплывающая подсказка не используется,
  *        string - текстовая подсказка,
  *        callable - будет вызван коллбек:
@@ -118,8 +128,21 @@ use yii\helpers\Html;
  *                string[] $hiddenRawContents <== содержимое скрытых значков (без форматирования)
  *            ):string <== текст подсказки
  *
+ * @property callable|false|string $addonTooltipTitle Настройки заголовка всплывающей подсказки на аддоне (только при $bootstrapTooltip = false).
+ *        false - заголовок не используется,
+ *        string - общий заголовок на все элементы,
+ *        string[] - массив заголовков, сопоставляемый с элементами по ключу,
+ *        callable - коллбек вида
+ *            function(
+ *                mixed $mapAttributeValue, <== значение элемента по ключевому атрибуту,
+ *                Model $item <== текущий элемент
+ *            ):string <== текст заголовка
+ *
  */
 class BadgeWidget extends CachedWidget {
+	/*Константы переключения tooltip/popover*/
+	public const TP_TOOLTIP = 'tooltip';
+	public const TP_POPOVER = 'popover';
 	/* Константы позиционирования подсказки */
 	public const TP_TOP = 'top';
 	public const TP_RIGHT = 'right';
@@ -189,13 +212,26 @@ class BadgeWidget extends CachedWidget {
 	 * @var string[]|callable|false|string
 	 */
 	public mixed $tooltip = false;
-	public bool $bootstrapTooltip = true;
+	/**
+	 * @var string[]|callable|false|string
+	 */
+	public mixed $tooltipTitle = false;
+
+	/**
+	 * true - tooltip, false - popover, null - default browser hint
+	 * @var bool|null
+	 */
+	public ?bool $bootstrapTooltip = true;
 	public string $tooltipPlacement = self::TP_TOP;
 	public string $tooltipTrigger = self::TT_HOVER;
 	/**
 	 * @var callable|false|string
 	 */
 	public mixed $addonTooltip = false;
+	/**
+	 * @var callable|false|string
+	 */
+	public mixed $addonTooltipTitle = false;
 
 	private mixed $_items = [];
 	/* Необработанные значения атрибутов, нужны для вывода подсказки в тултип на элементе аддона */
@@ -213,7 +249,7 @@ class BadgeWidget extends CachedWidget {
 	public function init():void {
 		parent::init();
 		BadgeWidgetAssets::register($this->getView());
-		if ($this->bootstrapTooltip) {
+		if (null !== $this->bootstrapTooltip) {
 			$this->view->registerJs("$('[data-toggle=\"tooltip\"]').tooltip()");
 		}
 	}
@@ -352,7 +388,7 @@ class BadgeWidget extends CachedWidget {
 		$item = $this->prepareItem(-1, $addonText);
 		$addonOptions = $this->addonOptions??$this->options;
 		$addonOptions = is_callable($addonOptions)?$addonOptions($this->_keyValue, $item):$addonOptions;
-		$addonOptions = $this->addTooltipToOptions($addonOptions, $this->prepareAddonTooltipText());
+		$addonOptions = $this->addTooltipToOptions($addonOptions, $this->prepareAddonTooltipText(), $this->prepareAddonTooltipTitle());
 		$addonOptions['id'] = "badge-widget-{$this->id}-addon";
 		Html::addCssClass($addonOptions, self::ADDON_BADGE_CLASS);
 		return Html::tag(self::BADGE_TAG, $addonText, $addonOptions);
@@ -376,20 +412,29 @@ class BadgeWidget extends CachedWidget {
 
 	/**
 	 * Добавляет в набор HTML-параметров данные для генерации подсказки
+	 * @param array $itemOptions
+	 * @param string|null $tooltipText
+	 * @param string|null $tooltipTitle
+	 * @return array
+	 * @throws Throwable
 	 */
-	private function addTooltipToOptions(array $itemOptions, ?string $tooltipText = null):array {
+	private function addTooltipToOptions(array $itemOptions, ?string $tooltipText = null, ?string $tooltipTitle = null):array {
 		if (null === $tooltipText) return $itemOptions;
-		$tooltipOptions = $this->bootstrapTooltip?[
-			'class' => 'add-tooltip',
-			'data-toggle' => 'tooltip',
-			'data-trigger' => $this->tooltipTrigger,
-			'data-original-title' => $tooltipText,
-			'title' => $tooltipText,
-			'data-placement' => $this->tooltipPlacement
-		]:[
-			'title' => $tooltipText
-		];
-
+		if (null === $this->bootstrapTooltip) {
+			$tooltipOptions = [
+				'title' => $tooltipText
+			];
+		} else {
+			$tooltipOptions = [
+				'class' => 'add-tooltip',
+				'data-toggle' => $this->bootstrapTooltip?self::TP_TOOLTIP:self::TP_POPOVER,
+				'data-trigger' => $this->tooltipTrigger,
+				'data-content' => $tooltipText,
+				'data-original-title' => $this->bootstrapTooltip?$tooltipText:$tooltipTitle,
+				'title' => $this->bootstrapTooltip?$tooltipText:$tooltipTitle,
+				'data-placement' => $this->tooltipPlacement
+			];
+		}
 		return ArrayHelper::mergeImplode(' ', $itemOptions, $tooltipOptions);
 	}
 
@@ -410,6 +455,22 @@ class BadgeWidget extends CachedWidget {
 	}
 
 	/**
+	 * @param null|Model $item
+	 * @return string|null
+	 * @throws Throwable
+	 */
+	private function prepareTooltipTitle(?Model $item = null):?string {
+		if (false === $this->tooltipTitle) return null;
+		$title = $this->tooltipTitle;
+		if (is_callable($title)) {
+			$title = $title($this->_keyValue, $item);
+		} elseif (is_array($title)) {
+			$title = ArrayHelper::getValue($title, $this->_keyValue);
+		}
+		return $title;
+	}
+
+	/**
 	 * @return string|null
 	 * @throws InvalidConfigException
 	 */
@@ -422,6 +483,21 @@ class BadgeWidget extends CachedWidget {
 			return call_user_func($this->addonTooltip, $this->_rawResultContents, $visibleRawContents, $hiddenRawContents);
 		}
 		return $this->addonTooltip;
+	}
+
+	/**
+	 * @return string|null
+	 * @throws InvalidConfigException
+	 */
+	private function prepareAddonTooltipTitle():?string {
+		if (false === $this->addonTooltipTitle) return null;
+		if (is_callable($this->addonTooltipTitle)) {
+			$visibleRawContents = $this->_rawResultContents;
+			$hiddenRawContents = [];
+			$this->prepareBadges($visibleRawContents, $hiddenRawContents);
+			return call_user_func($this->addonTooltipTitle, $this->_rawResultContents, $visibleRawContents, $hiddenRawContents);
+		}
+		return $this->addonTooltipTitle;
 	}
 
 	/**
@@ -474,7 +550,7 @@ class BadgeWidget extends CachedWidget {
 			$itemValue = $this->prepareUrl($item, $itemValue);
 			$itemOptions = is_callable($this->options)?call_user_func($this->options, $this->_keyValue, $item):$this->options;
 
-			$itemOptions = $this->addTooltipToOptions($itemOptions, $this->prepareTooltipText($item));
+			$itemOptions = $this->addTooltipToOptions($itemOptions, $this->prepareTooltipText($item), $this->prepareTooltipTitle($item));
 			if (null === $this->_keyValue) {
 				$badges[] = $this->prepareBadge($itemValue, $itemOptions);
 			} else {
@@ -493,7 +569,7 @@ class BadgeWidget extends CachedWidget {
 				'outerPostfix' => $this->outerPostfix,
 				'options' => $this->options,
 				'urlScheme' => $this->urlScheme,
-				'tooltip' => $this->addTooltipToOptions([], $this->prepareTooltipText())
+				'tooltip' => $this->addTooltipToOptions([], $this->prepareTooltipText(), $this->prepareTooltipText())
 			]);
 		}
 		$hiddenBlock = '';
