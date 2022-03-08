@@ -77,7 +77,7 @@ use yii\helpers\Html;
  *        UrlOptions->scheme = ['site/index', 'id' => 'value', 'param1' => 'property', 'param2' => 'non-property', 'param3' => 'arrayParameter']
  * Получим набор параметров ссылки для элемента:
  *        ['site/index', 'id' => 100, 'param1' => 'propertyData', 'param2' => 'non-property', 'param3[a]' => 10, 'param3[b]' => 20, 'param3[c]' => 30]
- * string - строка используется, как ссылка.
+ * string - строка используется как ссылка.
  * false - элементы не превращаются в ссылки.
  *
  * @property-write string[]|callable|false|string $tooltip Настройки для всплывающей подсказки.
