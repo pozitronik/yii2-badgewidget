@@ -18,8 +18,8 @@
 	"minimum-stability": "stable",
 	"require": {
 		"php": ">=8.0",
-		"pozitronik/yii2-helpers": "dev-master",
-		"pozitronik/yii2-cachedwidget": "dev-master"
+		"pozitronik/yii2-helpers": "^1.0.5",
+		"pozitronik/yii2-cachedwidget": "^1.1.0"
 	},
 	"require-dev": {
 		"yiisoft/yii2": "dev-master"
