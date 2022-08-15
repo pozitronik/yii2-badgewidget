@@ -283,7 +283,7 @@ class BadgeWidget extends CachedWidget {
 		if (!is_object($item)) {
 			/* Возможно, это массив с нужными данными */
 			if (!is_scalar($item) && null === $item = ArrayHelper::getValue($item, $this->subItem)) {
-				throw new InvalidConfigException("Non-scalar values is unsupported.");
+				throw new InvalidConfigException("Non-scalar values are unsupported.");
 			}
 			if (null === $this->keyAttribute) $this->keyAttribute = 'id';/*Избегаем перевычисления в prepareKeyAttribute()*/
 			return new DynamicModel([
