@@ -9,6 +9,7 @@ use Throwable;
 use yii\base\DynamicModel;
 use yii\base\InvalidConfigException;
 use yii\base\Model;
+use yii\base\Widget;
 use yii\helpers\Html;
 
 /**
@@ -139,7 +140,7 @@ use yii\helpers\Html;
  *            ):string <== текст заголовка
  *
  */
-class BadgeWidget extends CachedWidget {
+class BadgeWidget extends Widget {
 	/*Константы переключения tooltip/popover*/
 	public const TP_TOOLTIP = 'tooltip';
 	public const TP_POPOVER = 'popover';
