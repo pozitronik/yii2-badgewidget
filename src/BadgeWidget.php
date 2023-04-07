@@ -9,6 +9,7 @@ use Throwable;
 use yii\base\DynamicModel;
 use yii\base\InvalidConfigException;
 use yii\base\Model;
+use yii\base\Widget;
 use yii\helpers\Html;
 
 /**
@@ -139,7 +140,7 @@ use yii\helpers\Html;
  *            ):string <== текст заголовка
  *
  */
-class BadgeWidget extends CachedWidget {
+class BadgeWidget extends Widget {
 	/*Константы переключения tooltip/popover*/
 	public const TP_TOOLTIP = 'tooltip';
 	public const TP_POPOVER = 'popover';
@@ -283,7 +284,7 @@ class BadgeWidget extends CachedWidget {
 		if (!is_object($item)) {
 			/* Возможно, это массив с нужными данными */
 			if (!is_scalar($item) && null === $item = ArrayHelper::getValue($item, $this->subItem)) {
-				throw new InvalidConfigException("Non-scalar values is unsupported.");
+				throw new InvalidConfigException("Non-scalar values are unsupported.");
 			}
 			if (null === $this->keyAttribute) $this->keyAttribute = 'id';/*Избегаем перевычисления в prepareKeyAttribute()*/
 			return new DynamicModel([
